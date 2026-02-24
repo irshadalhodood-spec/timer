@@ -1,0 +1,9 @@
+{
+  "attendance": {
+    "check_in_at": "Check in",
+    "check_out_at": "Check out",
+    "worked": "Worked",
+    "breaks": "Breaks",
+    "location": "Location"
+  }
+}

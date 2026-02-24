@@ -1,0 +1,42 @@
+{
+  "employee": {
+    "name": "Name",
+    "email": "Email",
+    "department": "Department",
+    "join_date": "Join date",
+    "profile": "Employee Profile"
+  },
+  "analytics": {
+  "work": "Work",
+  "break": "Break",
+  "ot": "OT",
+  "short": "Short",
+  "monthly":"Monthly",
+  "year":"Year",
+  "sun":"Sun",
+  "mon":"Mon",
+  "tue":"Tue",
+  "wed":"Wed",
+  "thu":"Thu",
+  "fri":"Fri",
+  "sat":"Sat",
+  "off_weekend_or_holiday":"Off (weekend/holiday)",
+  "sessions":"Sessions",
+  "min": "min",
+  "s":"S",
+  "m":"M",
+  "t":"T",
+  "w":"W",
+  "th":"Th",
+  "f":"F",
+  "sa":"Sa",
+  "h": "h",   
+  "mi": "m",
+  "brk": "brk",
+  "st": "st",
+  "device":"Device"
+
+   
+
+  }
+}

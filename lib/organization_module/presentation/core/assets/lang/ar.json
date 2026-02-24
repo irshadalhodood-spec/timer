@@ -1,0 +1,15 @@
+{
+  "search": "بحث",
+  "all": "جميع",
+  "no_item": "لا يوجد عنصر",
+  "org": {
+    "details": "تفاصيل المنظمة",
+    "directory": "دليل الموظفين",
+    "employee_profile": "الملف الشخصي",
+    "headcount": "عدد الموظفين",
+    "departments": "الأقسام",
+    "company": "الشركة",
+    "join_date": "تاريخ الانضمام",
+    "reporting_manager": "المدير المباشر"
+  }
+}

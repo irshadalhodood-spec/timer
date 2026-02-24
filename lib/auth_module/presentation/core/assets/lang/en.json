@@ -1,0 +1,62 @@
+{
+  "required": "Required",
+  "loading": "Loading...",
+  "no_item": "No item found",
+  "invalid_email": "Invalid email",
+  "should_be_number": "Should be a number",
+  "not_equal": "Not equal",
+  "password_length": "Password should be more than 6 characters long",
+  "mobile_length": "Invalid mobile number",
+  "exit_app": "Exit app",
+  "exit_app_question": "Do you want to exit the app?",
+  "yes": "Yes",
+  "no": "No",
+  "login": {
+    "title": "Login",
+    "username": "Username",
+    "password": "Password",
+    "login_button": "Login",
+    "organization_setup": "Organization Setup",
+    "paste_invite_url": "Paste or scan your one-time invite URL to bind your account to the organization.",
+    "invite_organization_url": "Invite your organization Invite URL",
+    "invite_url_hint": "Invite URL",
+    "paste_or_scan_url": "Paste or Scan URL",
+    "or": "or",
+    "and": "and",
+    "continue": "Continue",
+    "biometric_login": "Biometric Login",
+    "biometric_reason": "Authenticate to sign in",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "home": "Dashboard",
+    "analytics_history": "Analytics & History",
+    "attendance_history": "Attendance History",
+    "today_hours": "Today's hours",
+    "live_work_timer": "Live Work Timer",
+    "started_at": "Started at",
+    "daily_hours_summary": "Daily Hours Summary",
+    "today_activity_timeline": "Today's Activity Timeline",
+    "check_in_to_start": "Check in to start",
+    "weekly_chart": "Weekly Hours Chart",
+    "monthly_score": "Monthly Attendance Score",
+    "days_present": "Days Present",
+    "days_absent": "Days Absent",
+    "attendant": "Present",
+    "absent": "Absent",
+    "start_break": "Start Break",
+    "end_break": "End Break",
+    "check_out": "Check Out",
+    "check_in": "Check In"
+  },
+  "attendance": {
+    "check_in_at": "Check in",
+    "check_out_at": "Check out",
+    "worked": "Worked"
+  },
+  "sync": {
+    "online": "Online",
+    "offline": "Offline",
+    "pending_sync": "pending"
+  }
+}

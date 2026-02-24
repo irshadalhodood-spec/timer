@@ -1,0 +1,62 @@
+{
+  "required": "مطلوب",
+  "loading": "جار التحميل...",
+  "no_item": "لا يوجد عنصر",
+  "invalid_email": "بريد إلكتروني خاطئ",
+  "should_be_number": "يجب أن يكون رقمًا",
+  "not_equal": "غير متساوي",
+  "password_length": "يجب أن يزيد طول كلمة المرور عن 6 أحرف",
+  "mobile_length": "رقم الجوال غير صالح",
+  "exit_app": "الخروج من التطبيق",
+  "exit_app_question": "هل تريد الخروج من التطبيق؟",
+  "yes": "نعم",
+  "no": "لا",
+  "login": {
+    "title": "تسجيل الدخول",
+    "username": "اسم المستخدم",
+    "password": "كلمة المرور",
+    "login_button": "دخول",
+    "organization_setup": "إعداد المنظمة",
+    "paste_invite_url": "الصق أو امسح رابط الدعوة لربط حسابك بالمنظمة.",
+    "invite_organization_url": "رابط دعوة منظمتك",
+    "invite_url_hint": "رابط الدعوة",
+    "paste_or_scan_url": "الصق أو امسح الرابط",
+    "or": "أو",
+    "and": "و",
+    "continue": "متابعة",
+    "biometric_login": "تسجيل الدخول بالبصمة",
+    "biometric_reason": "المصادقة لتسجيل الدخول",
+    "logout": "تسجيل الخروج"
+  },
+  "dashboard": {
+    "home": "لوحة التحكم",
+    "analytics_history": "التحليلات والسجل",
+    "attendance_history": "سجل الحضور",
+    "today_hours": "ساعات اليوم",
+    "live_work_timer": "مؤقت العمل المباشر",
+    "started_at": "بدأ في",
+    "daily_hours_summary": "ملخص الساعات اليومية",
+    "today_activity_timeline": "جدول أنشطة اليوم",
+    "check_in_to_start": "سجل حضورك للبدء",
+    "weekly_chart": "رسم الساعات الأسبوعية",
+    "monthly_score": "درجة الحضور الشهرية",
+    "days_present": "أيام الحضور",
+    "days_absent": "أيام الغياب",
+    "attendant": "حاضر",
+    "absent": "غائب",
+    "start_break": "بدء استراحة",
+    "end_break": "إنهاء استراحة",
+    "check_out": "تسجيل انصراف",
+    "check_in": "تسجيل حضور"
+  },
+  "attendance": {
+    "check_in_at": "حضور",
+    "check_out_at": "انصراف",
+    "worked": "عمل"
+  },
+  "sync": {
+    "online": "متصل",
+    "offline": "غير متصل",
+    "pending_sync": "في انتظار المزامنة"
+  }
+}

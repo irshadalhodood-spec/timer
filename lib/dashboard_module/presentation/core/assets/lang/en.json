@@ -1,0 +1,53 @@
+{
+  "no_item": "No item found",
+  "dashboard": {
+    "home": "Dashboard",
+    "analytics_history": "Analytics & History",
+    "attendance_history": "Attendance History",
+    "analytics": "Analytics",
+    "today_hours": "Today's hours",
+    "live_work_timer": "Live Work Timer",
+    "started_at": "Started at",
+    "daily_hours_summary": "Daily Hours Summary",
+    "today_activity_timeline": "Today's Activity Timeline",
+    "check_in_to_start": "Check in to start",
+    "weekly_chart": "Weekly Hours Chart",
+    "chart_work_hours": "Work",
+    "chart_break_hours": "Break",
+    "chart_overtime_hours": "OT",
+    "chart_short_hours": "Short",
+    "monthly_score": "Monthly Attendance Score",
+    "days_present": "Days Present",
+    "days_absent": "Days Absent",
+    "attendant": "Present",
+    "absent": "Absent",
+    "start_break": "Start Break",
+    "end_break": "End Break",
+    "check_out": "Check Out",
+    "check_in": "Check In",
+    "getting_location": "Getting location…",
+    "employees": "Employees",
+    "why_checkout": "Why checkout?",
+    "early_checkout_reason_hint": "Reason for early checkout (optional)",
+    "submit": "Submit",
+    "partial_leave": "Partial leave",
+    "early_checkout_reason": "Early checkout reason",
+    "today": "Today",
+    "break_start": "Break start",
+    "break_end": "Break end",
+    "geo_tagged": "Geo-tagged",
+    "today_total":"Today Total: "
+  },
+  "attendance": {
+    "check_in_at": "Check in",
+    "check_out_at": "Check out",
+    "worked": "Worked",
+    "breaks": "Breaks"
+  },
+  "sync": {
+    "online": "Online",
+    "offline": "Offline",
+    "pending_sync": "pending"
+  },
+  "cancel": "Cancel"
+}

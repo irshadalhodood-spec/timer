@@ -1,0 +1,9 @@
+{
+  "attendance": {
+    "check_in_at": "حضور",
+    "check_out_at": "انصراف",
+    "worked": "عمل",
+    "breaks": "استراحات",
+    "location": "الموقع"
+  }
+}

@@ -1,0 +1,109 @@
+name: employee_track
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.9.1
+  shared_preferences: ^2.5.4
+  connectivity_plus: ^7.0.0
+  intl: ^0.20.2
+  table_calendar: ^3.2.0
+  flutter_bloc: ^9.1.1
+  lottie: ^3.3.2
+  flutter_form_builder: ^10.3.0+2
+  toastification: ^3.0.3
+  cached_network_image: ^3.4.1
+  flutter_svg: ^2.2.3
+  flutter_secure_storage: ^10.0.0
+  string_validator: ^1.2.0
+  flutter_localizations:
+    sdk: flutter
+  form_builder_validators: ^11.3.0
+  # Clean arch + offline
+  equatable: ^2.0.5
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+  sqflite: ^2.3.2
+  path_provider: ^2.1.2
+  path: ^1.8.3
+  uuid: ^4.3.3
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0
+  local_auth: ^2.2.0
+  iconsax: ^0.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.8
+  freezed: ^2.4.7
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - lib/base_module/data/assets/
+    - lib/base_module/presentation/core/assets/lang/
+    - lib/base_module/presentation/core/assets/fonts/
+    - lib/auth_module/presentation/core/assets/lang/
+    - lib/dashboard_module/presentation/core/assets/lang/
+    - lib/attendance_module/presentation/core/assets/lang/
+    - lib/organization_module/presentation/core/assets/lang/
+    - lib/employee_track/presentation/core/assets/lang/
+
+  fonts:
+    
+    - family: Poppins
+      fonts:
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-Thin.ttf
+          weight: 100
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-ThinItalic.ttf
+          weight: 100
+          style: italic
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-ExtraLight.ttf
+          weight: 200
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-ExtraLightItalic.ttf
+          weight: 200
+          style: italic
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-Light.ttf
+          weight: 300
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-Regular.ttf
+          weight: 400
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-Bold.ttf
+          weight: 700
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-ExtraBold.ttf
+          weight: 800
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-ExtraBoldItalic.ttf
+          weight: 800
+          style: italic
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-Black.ttf
+          weight: 900
+        - asset: lib/base_module/presentation/core/assets/fonts/Poppins-BlackItalic.ttf
+          weight: 900
+          style: italic

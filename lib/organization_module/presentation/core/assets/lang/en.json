@@ -1,0 +1,15 @@
+{
+  "search": "Search",
+  "all": "All",
+  "no_item": "No item found",
+  "org": {
+    "details": "Organization Details",
+    "directory": "Employee Directory",
+    "employee_profile": "Profile",
+    "headcount": "Headcount",
+    "departments": "Departments",
+    "company": "Company",
+    "join_date": "Join date",
+    "reporting_manager": "Reporting Manager"
+  }
+}

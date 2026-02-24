@@ -1,0 +1,52 @@
+{
+  "no_item": "لا يوجد عنصر",
+  "dashboard": {
+    "home": "لوحة التحكم",
+    "analytics_history": "التحليلات والسجل",
+    "attendance_history": "سجل الحضور",
+    "analytics": "التحليلات",
+    "today_hours": "ساعات اليوم",
+    "live_work_timer": "مؤقت العمل المباشر",
+    "started_at": "بدأ في",
+    "daily_hours_summary": "ملخص الساعات اليومية",
+    "today_activity_timeline": "جدول أنشطة اليوم",
+    "check_in_to_start": "سجل حضورك للبدء",
+    "weekly_chart": "رسم الساعات الأسبوعية",
+    "chart_work_hours": "عمل",
+    "chart_break_hours": "استراحة",
+    "chart_overtime_hours": "وقت إضافي",
+    "chart_short_hours": "قصير",
+    "monthly_score": "درجة الحضور الشهرية",
+    "days_present": "أيام الحضور",
+    "days_absent": "أيام الغياب",
+    "attendant": "حاضر",
+    "absent": "غائب",
+    "start_break": "بدء استراحة",
+    "end_break": "إنهاء استراحة",
+    "check_out": "تسجيل انصراف",
+    "check_in": "تسجيل حضور",
+    "getting_location": "جاري تحديد الموقع…",
+    "employees": "الموظفون",
+    "why_checkout": "لماذا تسجيل الانصراف؟",
+    "early_checkout_reason_hint": "سبب تسجيل الانصراف المبكر (اختياري)",
+    "submit": "إرسال",
+    "partial_leave": "إجازة جزئية",
+    "early_checkout_reason": "سبب الانصراف المبكر",
+    "today": "اليوم",
+    "break_start": "بدء الاستراحة",
+    "break_end": "إنهاء الاستراحة",
+    "geo_tagged": "مُوَّجَة جغرافيًا",
+    "today_total":"إجمالي اليوم: "
+
+  },
+  "attendance": {
+    "check_in_at": "حضور",
+    "check_out_at": "انصراف",
+    "worked": "عمل"
+  },
+  "sync": {
+    "online": "متصل",
+    "offline": "غير متصل",
+    "pending_sync": "في انتظار المزامنة"
+  }
+}

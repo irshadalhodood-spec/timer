@@ -1,0 +1,305 @@
+{
+  "endpoints": {
+    "organization": {
+      "path": "/api/v1/organization",
+      "method": "GET",
+      "response": {
+        "success": true,
+        "statusCode": 200,
+        "data": {
+          "id": "demo-org-xyz",
+          "name": "Acme Corp",
+          "logoUrl": null,
+          "industry": "Technology",
+          "registeredAddress": "123 Business Park, City",
+          "totalHeadcount": 8,
+          "departments": [
+            { "id": "dept_eng", "name": "Engineering", "employeeCount": 4 },
+            { "id": "dept_sales", "name": "Sales", "employeeCount": 2 },
+            { "id": "dept_hr", "name": "HR", "employeeCount": 2 }
+          ]
+        }
+      }
+    },
+    "employees": {
+      "path": "/api/v1/employees",
+      "method": "GET",
+      "response": {
+        "success": true,
+        "statusCode": 200,
+        "data": [
+          {
+            "id": "user_1",
+            "fullName": "Demo User",
+            "jobTitle": "Software Engineer",
+            "departmentId": "dept_eng",
+            "departmentName": "Engineering",
+            "email": "demo@acme.example.com",
+            "phone": "+1 555 0100",
+            "profilePhotoUrl": null,
+            "joinDate": "2024-01-15T00:00:00.000Z",
+            "reportingManagerId": "user_mgr_1",
+            "isOnline": false
+          },
+          {
+            "id": "user_mgr_1",
+            "fullName": "Jane Smith",
+            "jobTitle": "Engineering Manager",
+            "departmentId": "dept_eng",
+            "departmentName": "Engineering",
+            "email": "jane.smith@acme.example.com",
+            "phone": null,
+            "profilePhotoUrl": null,
+            "joinDate": "2023-06-01T00:00:00.000Z",
+            "reportingManagerId": null,
+            "isOnline": false
+          },
+          {
+            "id": "user_2",
+            "fullName": "John Doe",
+            "jobTitle": "Senior Developer",
+            "departmentId": "dept_eng",
+            "departmentName": "Engineering",
+            "email": "john.doe@acme.example.com",
+            "phone": null,
+            "profilePhotoUrl": null,
+            "joinDate": "2023-09-10T00:00:00.000Z",
+            "reportingManagerId": "user_mgr_1",
+            "isOnline": false
+          },
+          {
+            "id": "user_3",
+            "fullName": "Alice Johnson",
+            "jobTitle": "Frontend Developer",
+            "departmentId": "dept_eng",
+            "departmentName": "Engineering",
+            "email": "alice.j@acme.example.com",
+            "phone": null,
+            "profilePhotoUrl": null,
+            "joinDate": "2024-03-01T00:00:00.000Z",
+            "reportingManagerId": "user_mgr_1",
+            "isOnline": false
+          },
+          {
+            "id": "user_sales_1",
+            "fullName": "Bob Wilson",
+            "jobTitle": "Sales Lead",
+            "departmentId": "dept_sales",
+            "departmentName": "Sales",
+            "email": "bob@acme.example.com",
+            "phone": null,
+            "profilePhotoUrl": null,
+            "joinDate": "2023-11-01T00:00:00.000Z",
+            "reportingManagerId": null,
+            "isOnline": false
+          },
+          {
+            "id": "user_sales_2",
+            "fullName": "Carol Brown",
+            "jobTitle": "Account Executive",
+            "departmentId": "dept_sales",
+            "departmentName": "Sales",
+            "email": "carol@acme.example.com",
+            "phone": null,
+            "profilePhotoUrl": null,
+            "joinDate": "2024-02-15T00:00:00.000Z",
+            "reportingManagerId": "user_sales_1",
+            "isOnline": false
+          },
+          {
+            "id": "user_hr_1",
+            "fullName": "David Lee",
+            "jobTitle": "HR Manager",
+            "departmentId": "dept_hr",
+            "departmentName": "HR",
+            "email": "david.lee@acme.example.com",
+            "phone": null,
+            "profilePhotoUrl": null,
+            "joinDate": "2023-07-01T00:00:00.000Z",
+            "reportingManagerId": null,
+            "isOnline": false
+          },
+          {
+            "id": "user_hr_2",
+            "fullName": "Eva Martinez",
+            "jobTitle": "HR Coordinator",
+            "departmentId": "dept_hr",
+            "departmentName": "HR",
+            "email": "eva@acme.example.com",
+            "phone": null,
+            "profilePhotoUrl": null,
+            "joinDate": "2024-04-01T00:00:00.000Z",
+            "reportingManagerId": "user_hr_1",
+            "isOnline": false
+          }
+        ]
+      }
+    },
+    "attendance_history": {
+      "path": "/api/v1/attendance/history",
+      "method": "GET",
+      "response": {
+        "success": true,
+        "statusCode": 200,
+        "data": [
+          {
+            "id": "att_user_1_1",
+            "userId": "user_1",
+            "checkInAt": "2025-02-17T09:00:00.000Z",
+            "checkOutAt": "2025-02-17T18:00:00.000Z",
+            "checkInLat": null,
+            "checkInLng": null,
+            "checkInAddress": null,
+            "checkOutLat": null,
+            "checkOutLng": null,
+            "checkOutAddress": null,
+            "breakSeconds": 1800,
+            "deviceInfo": null,
+            "synced": true,
+            "syncedAt": "2025-02-17T18:00:00.000Z",
+            "createdAt": "2025-02-17T09:00:00.000Z",
+            "updatedAt": "2025-02-17T18:00:00.000Z"
+          },
+          {
+            "id": "att_user_1_2",
+            "userId": "user_1",
+            "checkInAt": "2025-02-18T09:00:00.000Z",
+            "checkOutAt": "2025-02-18T17:30:00.000Z",
+            "checkInLat": null,
+            "checkInLng": null,
+            "checkInAddress": null,
+            "checkOutLat": null,
+            "checkOutLng": null,
+            "checkOutAddress": null,
+            "breakSeconds": 3600,
+            "deviceInfo": null,
+            "synced": true,
+            "syncedAt": "2025-02-18T17:30:00.000Z",
+            "createdAt": "2025-02-18T09:00:00.000Z",
+            "updatedAt": "2025-02-18T17:30:00.000Z"
+          },
+          {
+            "id": "att_user_1_3",
+            "userId": "user_1",
+            "checkInAt": "2025-02-19T08:30:00.000Z",
+            "checkOutAt": "2025-02-19T18:00:00.000Z",
+            "checkInLat": null,
+            "checkInLng": null,
+            "checkInAddress": null,
+            "checkOutLat": null,
+            "checkOutLng": null,
+            "checkOutAddress": null,
+            "breakSeconds": 0,
+            "deviceInfo": null,
+            "synced": true,
+            "syncedAt": "2025-02-19T18:00:00.000Z",
+            "createdAt": "2025-02-19T08:30:00.000Z",
+            "updatedAt": "2025-02-19T18:00:00.000Z"
+          },
+          {
+            "id": "att_user_1_4",
+            "userId": "user_1",
+            "checkInAt": "2025-02-20T09:00:00.000Z",
+            "checkOutAt": "2025-02-20T18:00:00.000Z",
+            "checkInLat": null,
+            "checkInLng": null,
+            "checkInAddress": null,
+            "checkOutLat": null,
+            "checkOutLng": null,
+            "checkOutAddress": null,
+            "breakSeconds": 1800,
+            "deviceInfo": null,
+            "synced": true,
+            "syncedAt": "2025-02-20T18:00:00.000Z",
+            "createdAt": "2025-02-20T09:00:00.000Z",
+            "updatedAt": "2025-02-20T18:00:00.000Z"
+          },
+          {
+            "id": "att_user_1_5",
+            "userId": "user_1",
+            "checkInAt": "2025-02-21T09:00:00.000Z",
+            "checkOutAt": null,
+            "checkInLat": null,
+            "checkInLng": null,
+            "checkInAddress": null,
+            "checkOutLat": null,
+            "checkOutLng": null,
+            "checkOutAddress": null,
+            "breakSeconds": 0,
+            "deviceInfo": null,
+            "synced": false,
+            "syncedAt": null,
+            "createdAt": "2025-02-21T09:00:00.000Z",
+            "updatedAt": "2025-02-21T09:00:00.000Z"
+          },
+          {
+            "id": "att_user_mgr_1_1",
+            "userId": "user_mgr_1",
+            "checkInAt": "2025-02-17T08:00:00.000Z",
+            "checkOutAt": "2025-02-17T18:30:00.000Z",
+            "checkInLat": null,
+            "checkInLng": null,
+            "checkInAddress": null,
+            "checkOutLat": null,
+            "checkOutLng": null,
+            "checkOutAddress": null,
+            "breakSeconds": 3600,
+            "deviceInfo": null,
+            "synced": true,
+            "syncedAt": "2025-02-17T18:30:00.000Z",
+            "createdAt": "2025-02-17T08:00:00.000Z",
+            "updatedAt": "2025-02-17T18:30:00.000Z"
+          },
+          {
+            "id": "att_user_2_1",
+            "userId": "user_2",
+            "checkInAt": "2025-02-18T09:15:00.000Z",
+            "checkOutAt": "2025-02-18T18:00:00.000Z",
+            "checkInLat": null,
+            "checkInLng": null,
+            "checkInAddress": null,
+            "checkOutLat": null,
+            "checkOutLng": null,
+            "checkOutAddress": null,
+            "breakSeconds": 1800,
+            "deviceInfo": null,
+            "synced": true,
+            "syncedAt": "2025-02-18T18:00:00.000Z",
+            "createdAt": "2025-02-18T09:15:00.000Z",
+            "updatedAt": "2025-02-18T18:00:00.000Z"
+          }
+        ]
+      }
+    },
+    "break_records": {
+      "path": "/api/v1/attendance/breaks",
+      "method": "GET",
+      "response": {
+        "success": true,
+        "statusCode": 200,
+        "data": [
+          {
+            "id": "break_att_user_1_1",
+            "attendanceId": "att_user_1_1",
+            "userId": "user_1",
+            "startAt": "2025-02-17T12:00:00.000Z",
+            "endAt": "2025-02-17T12:30:00.000Z",
+            "synced": true,
+            "syncedAt": "2025-02-17T12:30:00.000Z",
+            "createdAt": "2025-02-17T12:00:00.000Z"
+          },
+          {
+            "id": "break_att_user_1_2",
+            "attendanceId": "att_user_1_2",
+            "userId": "user_1",
+            "startAt": "2025-02-18T12:00:00.000Z",
+            "endAt": "2025-02-18T13:00:00.000Z",
+            "synced": true,
+            "syncedAt": "2025-02-18T13:00:00.000Z",
+            "createdAt": "2025-02-18T12:00:00.000Z"
+          }
+        ]
+      }
+    }
+  }
+}
