@@ -1025,6 +1025,11 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     final workedH = totalWorked ~/ 3600;
     final workedM = (totalWorked % 3600) ~/ 60;
     final breakM = totalBreak ~/ 60;
+    final totalWorkedHours = totalWorked / 3600.0;
+    final dayOtHours = totalWorkedHours > 8 ? totalWorkedHours - 8 : 0.0;
+    final dayShortHours = totalWorkedHours > 0 && totalWorkedHours < 8
+        ? 8 - totalWorkedHours
+        : 0.0;
     final isPresent = dayRecords.isNotEmpty;
     final daySessions = List<AttendanceEntity>.from(dayRecords)
       ..sort((a, b) => a.checkInAt.compareTo(b.checkInAt));
@@ -1319,15 +1324,56 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                                        ),
                                  ),
                                  const SizedBox(width: 6),
-                                //  Text(
-                                //    LocaleDigits.format('+${otHours.toStringAsFixed(1)} ${translation.of('analytics.h')}'),
-                                //    style: theme.textTheme.titleSmall?.copyWith(
-                                //      fontWeight: FontWeight.w700,
-                                //      color: colorScheme.onSurface,
-                                //    ),
-                                //  ),
+                                 Text(
+                                   LocaleDigits.format(
+                                     dayOtHours > 0
+                                         ? '+${dayOtHours.toStringAsFixed(1)} ${translation.of('analytics.h')}'
+                                         : '0${translation.of('analytics.h')}',
+                                   ),
+                                   style: theme.textTheme.titleSmall?.copyWith(
+                                     fontWeight: FontWeight.w700,
+                                     color: colorScheme.onSurface,
+                                   ),
+                                 ),
                                ],
                              ),
+                            if (dayShortHours > 0) ...[
+                              AppPadding(multipliedBy: 0.5),
+                              Container(
+                                width: 1,
+                                height: 24,
+                                color: colorScheme.outline,
+                              ),
+                              AppPadding(multipliedBy: 0.5),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.timer_off_outlined,
+                                    size: 20,
+                                    color: Colors.orange,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    translation.of('analytics.st'),
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    LocaleDigits.format(
+                                      '-${dayShortHours.toStringAsFixed(1)} ${translation.of('analytics.h')}',
+                                    ),
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.orange.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
