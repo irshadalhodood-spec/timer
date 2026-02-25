@@ -6,8 +6,13 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
 import android.os.Build
+import android.view.View
 import android.widget.RemoteViews
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -27,6 +32,7 @@ object AttendanceNotificationHelper {
         workedSeconds: Int,
         isOnBreak: Boolean,
         expectedWorkSeconds: Int,
+        breakSegments: List<Pair<Int, Int>> = emptyList(),
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS)
@@ -77,32 +83,32 @@ object AttendanceNotificationHelper {
         )
 
         val totalMax = expectedWorkSeconds.coerceAtLeast(1)
-        val work = workedSeconds.coerceIn(0, totalMax)
-        val break_ = breakSeconds.coerceIn(0, totalMax)
-        val remaining = (totalMax - work - break_).coerceIn(0, totalMax)
-
-        val workStr = formatDuration(workedSeconds)
-        val breakStr = formatDuration(breakSeconds)
-        val remainingStr = formatDuration(remaining)
-
         val workColor = ContextCompat.getColor(context, R.color.notification_progress_work)
         val breakColor = ContextCompat.getColor(context, R.color.notification_progress_break)
         val remainingColor = ContextCompat.getColor(context, R.color.notification_progress_remaining)
 
+        val progressBitmap = createTimelineProgressBarBitmap(
+            context = context,
+            totalWidth = (320 * context.resources.displayMetrics.density).toInt().coerceAtLeast(200),
+            barHeightPx = (10 * context.resources.displayMetrics.density).toInt().coerceAtLeast(8),
+            checkInAtIso = checkInAtIso,
+            expectedWorkSeconds = totalMax,
+            breakSegments = breakSegments,
+            workColor = workColor,
+            breakColor = breakColor,
+            remainingColor = remainingColor,
+        )
+
         val customView = RemoteViews(context.packageName, R.layout.notification_attendance).apply {
             setTextViewText(R.id.notification_title, title)
             setTextViewText(R.id.notification_content, content)
-            setProgressBar(R.id.notification_progress_work, totalMax, work, false)
-            setProgressBar(R.id.notification_progress_break, totalMax, break_, false)
-            setProgressBar(R.id.notification_progress_remaining, totalMax, remaining, false)
-            setTextViewText(R.id.notification_label_work, context.getString(R.string.notification_progress_work_label) + "  " + workStr)
-            setTextViewText(R.id.notification_label_break, context.getString(R.string.notification_progress_break_label) + "  " + breakStr)
-            setTextViewText(R.id.notification_label_remaining, context.getString(R.string.notification_progress_remaining_label) + "  " + remainingStr)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            customView.setColorStateList(R.id.notification_progress_work, "setProgressTintList", ColorStateList.valueOf(workColor))
-            customView.setColorStateList(R.id.notification_progress_break, "setProgressTintList", ColorStateList.valueOf(breakColor))
-            customView.setColorStateList(R.id.notification_progress_remaining, "setProgressTintList", ColorStateList.valueOf(remainingColor))
+            setImageViewBitmap(R.id.notification_progress_bar, progressBitmap)
+            setOnClickPendingIntent(R.id.notification_btn_check_out, actionIntent("checkOut"))
+            setOnClickPendingIntent(R.id.notification_btn_start_break, actionIntent("startBreak"))
+            setOnClickPendingIntent(R.id.notification_btn_end_break, actionIntent("endBreak"))
+            // Show only one break button: End Break when on break, Start Break when not
+            setViewVisibility(R.id.notification_btn_start_break, if (isOnBreak) View.GONE else View.VISIBLE)
+            setViewVisibility(R.id.notification_btn_end_break, if (isOnBreak) View.VISIBLE else View.GONE)
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -111,15 +117,13 @@ object AttendanceNotificationHelper {
             .setContentText(content)
             .setContentIntent(pendingContent)
             .setCustomContentView(customView)
+            .setCustomBigContentView(customView)
             .setColor(ContextCompat.getColor(context, R.color.notification_accent))
             .setColorized(true)
             .setOngoing(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, context.getString(R.string.notification_action_check_out), actionIntent("checkOut"))
-            .addAction(android.R.drawable.ic_media_pause, context.getString(R.string.notification_action_start_break), actionIntent("startBreak"))
-            .addAction(android.R.drawable.ic_media_play, context.getString(R.string.notification_action_end_break), actionIntent("endBreak"))
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -163,6 +167,20 @@ object AttendanceNotificationHelper {
         }
     }
 
+    /** Seconds from check-in time to now; non-negative. */
+    private fun secondsSinceCheckIn(checkInAtIso: String): Int {
+        return try {
+            val fmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getDefault()
+            }
+            val checkIn = fmt.parse(checkInAtIso.take(19)) ?: return 0
+            val now = System.currentTimeMillis()
+            ((now - checkIn.time) / 1000).toInt().coerceAtLeast(0)
+        } catch (_: Exception) {
+            0
+        }
+    }
+
     private fun formatDuration(totalSeconds: Int): String {
         val h = totalSeconds / 3600
         val m = (totalSeconds % 3600) / 60
@@ -170,6 +188,88 @@ object AttendanceNotificationHelper {
             h > 0 -> "${h}h ${m}m"
             else -> "${m}m"
         }
+    }
+
+    /**
+     * Draws the full work timeline (0 .. expectedWorkSeconds). Work = green, breaks at their actual
+     * positions = yellow, remaining (future) = red. Breaks are scattered on the timeline.
+     */
+    private fun createTimelineProgressBarBitmap(
+        context: Context,
+        totalWidth: Int,
+        barHeightPx: Int,
+        checkInAtIso: String,
+        expectedWorkSeconds: Int,
+        breakSegments: List<Pair<Int, Int>>,
+        workColor: Int,
+        breakColor: Int,
+        remainingColor: Int,
+    ): Bitmap {
+        val totalMax = expectedWorkSeconds.coerceAtLeast(1)
+        val currentOffset = secondsSinceCheckIn(checkInAtIso).coerceIn(0, totalMax)
+        val widthF = totalWidth.toFloat()
+        val scale = widthF / totalMax
+
+        // Breaks that fall within [0, currentOffset], sorted by start; clamp to [0, currentOffset]
+        val breaks = breakSegments
+            .map { (s, e) -> s.coerceIn(0, totalMax) to e.coerceIn(0, totalMax) }
+            .filter { (s, e) -> e > s }
+            .sortedBy { it.first }
+            .map { (s, e) -> s to e.coerceAtMost(currentOffset) }
+            .filter { (s, e) -> e > s }
+
+        // Build ordered segments: (startSec, endSec, type) where type = "work" | "break" | "remaining"
+        data class Seg(val start: Int, val end: Int, val type: String)
+        val segments = mutableListOf<Seg>()
+        var pos = 0
+        for ((bStart, bEnd) in breaks) {
+            if (bStart > pos) segments.add(Seg(pos, bStart, "work"))
+            segments.add(Seg(bStart, bEnd, "break"))
+            pos = bEnd
+        }
+        if (currentOffset > pos) segments.add(Seg(pos, currentOffset, "work"))
+        if (totalMax > currentOffset) segments.add(Seg(currentOffset, totalMax, "remaining"))
+
+        val minSegmentPx = (2 * (totalWidth / 100f)).coerceAtLeast(1f)
+        val widthsPx = segments.map { seg ->
+            val sec = (seg.end - seg.start).coerceAtLeast(0)
+            (sec * scale).coerceAtLeast(if (sec > 0) minSegmentPx else 0f)
+        }
+        var sumPx = widthsPx.sum()
+        val scaleRatio = if (sumPx > 0f && kotlin.math.abs(sumPx - widthF) > 0.5f) widthF / sumPx else 1f
+        val finalWidths = widthsPx.map { (it * scaleRatio).coerceIn(0f, widthF) }.toMutableList()
+        if (finalWidths.isNotEmpty()) {
+            val actualSum = finalWidths.sum()
+            finalWidths[finalWidths.size - 1] = (finalWidths.last() + (widthF - actualSum)).coerceIn(0f, widthF)
+        }
+
+        val bitmap = Bitmap.createBitmap(totalWidth, barHeightPx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val cornerRadiusPx = (8 * (totalWidth / 320f)).coerceAtMost(barHeightPx / 2f)
+        val fullRect = RectF(0f, 0f, widthF, barHeightPx.toFloat())
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        val path = Path().apply { addRoundRect(fullRect, cornerRadiusPx, cornerRadiusPx, Path.Direction.CW) }
+        canvas.clipPath(path)
+
+        var left = 0f
+        for (i in segments.indices) {
+            val w = finalWidths.getOrElse(i) { 0f }
+            if (w <= 0f) continue
+            val right = (left + w).coerceAtMost(widthF)
+            paint.color = when (segments[i].type) {
+                "break" -> breakColor
+                "remaining" -> remainingColor
+                else -> workColor
+            }
+            canvas.drawRect(left, 0f, right, barHeightPx.toFloat(), paint)
+            left = right
+        }
+        if (left < widthF) {
+            paint.color = remainingColor
+            canvas.drawRect(left, 0f, widthF, barHeightPx.toFloat(), paint)
+        }
+        return bitmap
     }
 
     fun clear(context: Context) {

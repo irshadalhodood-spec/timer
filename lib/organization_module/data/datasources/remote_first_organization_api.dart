@@ -5,7 +5,6 @@ import '../../domain/entities/organization_entity.dart';
 import 'json_organization_api.dart';
 import 'trackme_organization_api.dart';
 
-/// Tries TrackMe API first; on failure falls back to JSON asset.
 class RemoteFirstOrganizationApi implements OrganizationApi {
   RemoteFirstOrganizationApi({
     required TrackMeOrganizationApi trackMe,

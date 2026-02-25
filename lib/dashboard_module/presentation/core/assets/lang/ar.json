@@ -36,8 +36,8 @@
     "break_start": "بدء الاستراحة",
     "break_end": "إنهاء الاستراحة",
     "geo_tagged": "مُوَّجَة جغرافيًا",
-    "today_total":"إجمالي اليوم: "
-
+    "today_total":"إجمالي اليوم: ",
+    "auto_closed_at_eod": "أُغلق تلقائيًا في نهاية اليوم"
   },
   "attendance": {
     "check_in_at": "حضور",

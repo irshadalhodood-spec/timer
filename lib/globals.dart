@@ -67,7 +67,7 @@ showBottomSheetPopup(
     enableDrag: true,
     context: globalNavigatorKey.currentContext!,
     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-    barrierColor: AppColorScheme.primaryText.withOpacity(0.9),
+    barrierColor: AppColorScheme.primaryText.withValues(alpha:0.9),
     builder: (context) {
       return Padding(
         padding: EdgeInsets.only(

@@ -178,7 +178,7 @@
 //       decoration: BoxDecoration(
 //       boxShadow: [
 //         BoxShadow(
-//           color: Theme.of(context).shadowColor.withOpacity(0.04),
+//           color: Theme.of(context).shadowColor.withValues(alpha:0.04),
 //           spreadRadius: 2,
 //           blurRadius: 5,
 //           offset: const Offset(0, 3),
@@ -418,7 +418,7 @@ class PrimaryContainer extends StatelessWidget {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(0.04),
+            color: Theme.of(context).shadowColor.withValues(alpha:0.04),
             spreadRadius: 2,
             blurRadius: 5,
             offset: const Offset(0, 3),

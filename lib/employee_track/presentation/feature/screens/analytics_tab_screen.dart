@@ -12,6 +12,7 @@ import '../../../../base_module/presentation/util/locale_digits.dart';
 import '../../../../base_module/presentation/core/values/app_constants.dart';
 import '../../../../attendance_module/domain/repositories/attendance_repository.dart';
 import '../../../../auth_module/presentation/feature/bloc/auth_bloc.dart';
+import '../../../../base_module/presentation/feature/live_time/live_time_cubit.dart';
 import '../../../../dashboard_module/domain/attendance_bloc.dart';
 import '../bloc/mothly_data_cubit/monthly_data_cubit.dart';
 import '../bloc/mothly_data_cubit/monthly_data_state.dart';
@@ -32,6 +33,8 @@ class AnalyticsTabScreen extends StatefulWidget {
 class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
   var _loaded = false;
   List<AttendanceEntity>? _lastLoadedList;
+  /// Selected day in the weekly chart; null = show week summary.
+  DateTime? _selectedWeekDay;
   List<int> get _weekendWeekdays => widget.weekendWeekdays ?? [6, 7];
   List<DateTime> get _holidays => widget.holidays ?? [];
 
@@ -92,20 +95,32 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               return const Center(child: CupertinoActivityIndicator());
             }
             if (list != null) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildWeeklyChart(context, list),
-                    const SizedBox(height: 24),
-                    BlocBuilder<MonthlyScoreCubit, MonthlyScoreState>(
-                      builder: (context, scoreState) =>
-                          _buildMonthlyScore(context, list, scoreState),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildAttendanceHistory(context, list),
-                  ],
+              return BlocBuilder<LiveTimeCubit, DateTime>(
+                buildWhen: (prev, next) =>
+                    prev.second != next.second ||
+                    prev.minute != next.minute ||
+                    prev.hour != next.hour,
+                builder: (context, now) => SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildWeeklyChart(
+                        context,
+                        list,
+                        now,
+                        selectedDate: _selectedWeekDay,
+                        onDaySelected: (date) => setState(() => _selectedWeekDay = date),
+                      ),
+                      const SizedBox(height: 24),
+                      BlocBuilder<MonthlyScoreCubit, MonthlyScoreState>(
+                        builder: (context, scoreState) =>
+                            _buildMonthlyScore(context, list, scoreState),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildAttendanceHistory(context, list, now),
+                    ],
+                  ),
                 ),
               );
             }
@@ -116,8 +131,13 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     );
   }
 
-  Widget _buildWeeklyChart(BuildContext context, List<AttendanceEntity> list) {
-    final now = DateTime.now();
+  Widget _buildWeeklyChart(
+    BuildContext context,
+    List<AttendanceEntity> list,
+    DateTime now, {
+    DateTime? selectedDate,
+    void Function(DateTime?)? onDaySelected,
+  }) {
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final weekDays = List.generate(7, (i) => weekStart.add(Duration(days: i)));
     final dayLabels = [
@@ -130,59 +150,88 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
       (translation.of('analytics.sun')),
     ];
 
+    final todayNormalized = DateTime(now.year, now.month, now.day);
     final dayData = <DayHours>[];
     for (final day in weekDays) {
       final dayStart = DateTime(day.year, day.month, day.day);
       final dayEnd = dayStart.add(const Duration(days: 1));
+      final isToday = day.year == todayNormalized.year &&
+          day.month == todayNormalized.month &&
+          day.day == todayNormalized.day;
       var workSeconds = 0;
       var breakSeconds = 0;
       final daySessions =
           list
               .where(
-                (a) =>
-                    a.checkInAt.isAfter(dayStart) &&
-                    a.checkInAt.isBefore(dayEnd),
+                (a) {
+                  final checkInLocal = a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
+                  return checkInLocal.isAfter(dayStart) && checkInLocal.isBefore(dayEnd);
+                },
               )
               .toList()
             ..sort((a, b) => a.checkInAt.compareTo(b.checkInAt));
       for (final a in daySessions) {
-        final out = a.checkOutAt ?? now;
+        final checkInLocal = a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
+        final out = a.checkOutAt != null
+            ? (a.checkOutAt!.isUtc ? a.checkOutAt!.toLocal() : a.checkOutAt!)
+            : (isToday ? now : dayEnd);
         if (out.isAfter(dayStart)) {
           final end = out.isBefore(dayEnd) ? out : dayEnd;
-          workSeconds += end.difference(a.checkInAt).inSeconds - a.breakSeconds;
+          final seg = (end.difference(checkInLocal).inSeconds - a.breakSeconds).clamp(0, 86400 * 2);
+          workSeconds += seg;
           breakSeconds += a.breakSeconds;
         }
       }
-      final workHours = workSeconds / 3600;
+      final totalWorkHours = workSeconds / 3600;
       final breakHours = breakSeconds / 3600;
+      // Work capped at 8h; excess goes to OT
+      final workHours = totalWorkHours > 8 ? 8.0 : totalWorkHours;
+      final overtimeHours = totalWorkHours > 8 ? totalWorkHours - 8 : 0.0;
+      // Short only when worked > 0 but < 8h (and no OT)
+      final shortHours = totalWorkHours > 0 && totalWorkHours < 8 ? 8.0 - totalWorkHours : 0.0;
       final isPartialLeave =
-          daySessions.isNotEmpty &&
+          (daySessions.isNotEmpty &&
           daySessions.last.checkOutAt != null &&
-          daySessions.last.isEarlyCheckout;
+          daySessions.last.isEarlyCheckout) ||
+          (daySessions.isNotEmpty && shortHours > 0 && daySessions.last.checkOutAt != null);
       dayData.add(
         DayHours(
           workHours: workHours,
           breakHours: breakHours,
-          overtimeHours: workHours > 8 ? workHours - 8 : 0.0,
-          shortHours: workHours > 0 && workHours < 8 ? 8 - workHours : 0.0,
+          overtimeHours: overtimeHours,
+          shortHours: shortHours,
           isPartialLeave: isPartialLeave,
         ),
       );
     }
 
-    double weekWork = 0, weekBreak = 0, weekOvertime = 0, weekShort = 0;
-    for (final d in dayData) {
-      weekWork += d.workHours;
-      weekBreak += d.breakHours;
-      weekOvertime += d.overtimeHours;
-      weekShort += d.shortHours;
-    }
+    // Selection: show selected day or week summary
+    final selectedIndex = selectedDate == null
+        ? null
+        : weekDays.indexWhere(
+            (d) => d.year == selectedDate.year && d.month == selectedDate.month && d.day == selectedDate.day,
+          );
+    final int? detailIndex = (selectedIndex != null && selectedIndex >= 0 && selectedIndex < dayData.length)
+        ? selectedIndex
+        : null;
+    // Week totals (when no selection)
+    final weekWork = dayData.fold<double>(0, (s, d) => s + d.workHours);
+    final weekBreak = dayData.fold<double>(0, (s, d) => s + d.breakHours);
+    final weekOvertime = dayData.fold<double>(0, (s, d) => s + d.overtimeHours);
+    final weekShort = dayData.fold<double>(0, (s, d) => s + d.shortHours);
+    final detailWork = detailIndex != null ? dayData[detailIndex].workHours : weekWork;
+    final detailBreak = detailIndex != null ? dayData[detailIndex].breakHours : weekBreak;
+    final detailOvertime = detailIndex != null ? dayData[detailIndex].overtimeHours : weekOvertime;
+    final detailShort = detailIndex != null ? dayData[detailIndex].shortHours : weekShort;
+    final detailLabel = detailIndex != null
+        ? AppDateTimeFormat.formatWeekday(weekDays[detailIndex])
+        : translation.of('analytics.this_week');
 
     const maxHoursAxis = 12.0;
     const barMaxHeight = 140.0;
     final theme = Theme.of(context);
     final workColor = theme.colorScheme.primary;
-    final breakColor = Colors.grey;
+    final breakColor = Colors.amber;
     final overtimeColor = theme.colorScheme.error;
     final shortColor = Colors.orange;
 
@@ -245,6 +294,11 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(7, (i) {
                 final d = dayData[i];
+                final day = weekDays[i];
+                final isSelected = selectedDate != null &&
+                    day.year == selectedDate.year &&
+                    day.month == selectedDate.month &&
+                    day.day == selectedDate.day;
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -258,6 +312,10 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                       overtimeColor: overtimeColor,
                       shortColor: shortColor,
                       isPartialLeave: d.isPartialLeave,
+                      isSelected: isSelected,
+                      onTap: onDaySelected != null
+                          ? () => onDaySelected(isSelected ? null : day)
+                          : null,
                       theme: theme,
                     ),
                   ),
@@ -272,41 +330,55 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.15),
+                color: theme.colorScheme.outline.withValues(alpha: 0.15),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _summaryChip(
-                  context,
-                  translation.of('analytics.work'),
-                  LocaleDigits.format('${weekWork.toStringAsFixed(1)}${translation.of('analytics.h')}'),
-                  workColor,
+                Text(
+                  detailLabel,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-                _summaryChip(
-                  context,
-                  translation.of('analytics.break'),
-                  LocaleDigits.format('${weekBreak.toStringAsFixed(1)}${translation.of('analytics.h')}'),
-                  breakColor,
-                ),
-                _summaryChip(
-                  context,
-                  translation.of('analytics.ot'),
-                  LocaleDigits.format(weekOvertime > 0
-                      ? '+${weekOvertime.toStringAsFixed(1)}${translation.of('analytics.h')}'
-                      : '0${translation.of('analytics.h')}'),
-                  overtimeColor,
-                ),
-                _summaryChip(
-                  context,
-                  translation.of('analytics.short'),
-                  LocaleDigits.format(weekShort > 0
-                      ? '-${weekShort.toStringAsFixed(1)}${translation.of('analytics.h')}'
-                      : '0${translation.of('analytics.h')}'),
-                  weekShort > 0
-                      ? shortColor
-                      : theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _summaryChip(
+                      context,
+                      translation.of('analytics.work'),
+                      LocaleDigits.format(detailWork > 0
+                          ? '${detailWork.toStringAsFixed(1)}${translation.of('analytics.h')}'
+                          : '—'),
+                      workColor,
+                    ),
+                    _summaryChip(
+                      context,
+                      translation.of('analytics.break'),
+                      LocaleDigits.format(detailBreak > 0
+                          ? '${detailBreak.toStringAsFixed(1)}${translation.of('analytics.h')}'
+                          : '—'),
+                      breakColor,
+                    ),
+                    _summaryChip(
+                      context,
+                      translation.of('analytics.ot'),
+                      LocaleDigits.format(detailOvertime > 0
+                          ? '+${detailOvertime.toStringAsFixed(1)}${translation.of('analytics.h')}'
+                          : '—'),
+                      detailOvertime > 0 ? overtimeColor : theme.colorScheme.onSurfaceVariant,
+                    ),
+                    _summaryChip(
+                      context,
+                      translation.of('analytics.short'),
+                      LocaleDigits.format(detailShort > 0
+                          ? '-${detailShort.toStringAsFixed(1)}${translation.of('analytics.h')}'
+                          : '—'),
+                      detailShort > 0 ? shortColor : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -378,24 +450,36 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
         : scoreState.yearList;
     final presentDates = <DateTime>{};
     final partialLeaveDates = <DateTime>{};
+    final shortHoursDates = <DateTime>{};
+    final calendarByDate = <DateTime, List<AttendanceEntity>>{};
     if (list != null) {
       final byDate = <DateTime, List<AttendanceEntity>>{};
       for (final a in list) {
-        final d = DateTime(
-          a.checkInAt.year,
-          a.checkInAt.month,
-          a.checkInAt.day,
-        );
+        final checkInLocal = a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
+        final d = DateTime(checkInLocal.year, checkInLocal.month, checkInLocal.day);
         presentDates.add(d);
         byDate.putIfAbsent(d, () => []).add(a);
+        calendarByDate.putIfAbsent(d, () => []).add(a);
       }
       for (final entry in byDate.entries) {
-        final daySessions = entry.value
+        final daySessions = List<AttendanceEntity>.from(entry.value)
           ..sort((a, b) => a.checkInAt.compareTo(b.checkInAt));
+        // Partial leave = last session explicitly checked out early
         if (daySessions.isNotEmpty &&
             daySessions.last.checkOutAt != null &&
             daySessions.last.isEarlyCheckout) {
           partialLeaveDates.add(entry.key);
+        }
+        // Short hours: only mark when the day is fully done (all sessions checked out)
+        final allCheckedOut = daySessions.every((a) => a.checkOutAt != null);
+        if (allCheckedOut) {
+          final totalWorked = daySessions.fold<int>(
+            0,
+            (s, a) => s + _workedSecondsForDay(a, entry.key, now: null),
+          );
+          if (totalWorked > 0 && totalWorked < AppConstants.expectedWorkSecondsPerDay) {
+            shortHoursDates.add(entry.key);
+          }
         }
       }
     }
@@ -408,9 +492,9 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     final content = Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow.withOpacity(0.5),
+        color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -495,6 +579,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               presentDates,
               partialLeaveDates,
               theme,
+              shortHoursDates: shortHoursDates,
+              byDate: calendarByDate,
             ),
             const SizedBox(height: 12),
             _buildMonthLegend(
@@ -504,6 +590,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               presentDates,
               partialLeaveDates,
               theme,
+              shortHoursDates: shortHoursDates,
             ),
           ] else ...[
             _buildYearGrid(
@@ -512,6 +599,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               presentDates,
               partialLeaveDates,
               theme,
+              shortHoursDates: shortHoursDates,
+              byDate: calendarByDate,
             ),
             const SizedBox(height: 12),
             _buildYearLegend(
@@ -520,6 +609,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               presentDates,
               partialLeaveDates,
               theme,
+              shortHoursDates: shortHoursDates,
             ),
           ],
         ],
@@ -535,7 +625,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              color: theme.colorScheme.surface.withOpacity(0.7),
+              color: theme.colorScheme.surface.withValues(alpha:0.7),
             ),
             child: const Center(
               child: SizedBox(
@@ -558,6 +648,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     Set<DateTime> partialLeaveDates,
     ThemeData theme, {
     double? cellSizeOverride,
+    Set<DateTime>? shortHoursDates,
+    Map<DateTime, List<AttendanceEntity>>? byDate,
   }) {
     final first = DateTime(year, month, 1);
     final last = DateTime(year, month + 1, 0);
@@ -627,19 +719,32 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                   final present = presentDates.contains(d);
                   final offDay = _isOffDay(d);
                   final isPartialLeave = partialLeaveDates.contains(d);
+                  final isShortHours = shortHoursDates?.contains(d) ?? false;
+                  final dayRecords = byDate?[d];
+                  final cell = _gridCell(
+                    theme,
+                    present,
+                    false,
+                    offDay,
+                    isUpcoming,
+                    isPartialLeave,
+                    isShortHours,
+                  );
+                  final tappable = present && !isUpcoming && dayRecords != null && cellSizeOverride == null;
                   return Padding(
                     padding: EdgeInsets.only(right: col < 6 ? gap : 0),
                     child: SizedBox(
                       width: cellSize,
                       height: cellSize,
-                      child: _gridCell(
-                        theme,
-                        present,
-                        false,
-                        offDay,
-                        isUpcoming,
-                        isPartialLeave,
-                      ),
+                      child: tappable
+                          ? _DayCellWithTooltip(
+                              date: d,
+                              dayRecords: dayRecords,
+                              theme: theme,
+                              child: cell,
+                              workedSecondsForDay: (a) => _workedSecondsForDay(a, d, now: DateTime.now()),
+                            )
+                          : cell,
                     ),
                   );
                 }),
@@ -671,8 +776,9 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     int month,
     Set<DateTime> presentDates,
     Set<DateTime> partialLeaveDates,
-    ThemeData theme,
-  ) {
+    ThemeData theme, {
+    Set<DateTime>? shortHoursDates,
+  }) {
     final last = DateTime(year, month + 1, 0);
     final today = DateTime.now();
     int present = 0;
@@ -683,7 +789,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     for (int day = 1; day <= last.day; day++) {
       final d = DateTime(year, month, day);
       if (d.isAfter(todayNormalized)) continue;
-      if (partialLeaveDates.contains(d)) {
+      if (partialLeaveDates.contains(d) || (shortHoursDates?.contains(d) ?? false)) {
         partialLeave++;
       }
       if (presentDates.contains(d)) {
@@ -731,8 +837,10 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     int year,
     Set<DateTime> presentDates,
     Set<DateTime> partialLeaveDates,
-    ThemeData theme,
-  ) {
+    ThemeData theme, {
+    Set<DateTime>? shortHoursDates,
+    Map<DateTime, List<AttendanceEntity>>? byDate,
+  }) {
     return SizedBox(
       height: 100,
       child: ListView.builder(
@@ -763,6 +871,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                   partialLeaveDates,
                   theme,
                   cellSizeOverride: _yearMonthCellSize,
+                  shortHoursDates: shortHoursDates,
+                  byDate: byDate,
                 ),
               ],
             ),
@@ -777,8 +887,9 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     int year,
     Set<DateTime> presentDates,
     Set<DateTime> partialLeaveDates,
-    ThemeData theme,
-  ) {
+    ThemeData theme, {
+    Set<DateTime>? shortHoursDates,
+  }) {
     int present = 0;
     int partialLeave = 0;
     int offDays = 0;
@@ -794,7 +905,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     for (int i = 0; i < total; i++) {
       final date = first.add(Duration(days: i));
       if (date.isAfter(todayNormalized)) continue;
-      if (partialLeaveDates.contains(date)) partialLeave++;
+      if (partialLeaveDates.contains(date) || (shortHoursDates?.contains(date) ?? false)) partialLeave++;
       if (presentDates.contains(date)) {
         present++;
       } else if (_isOffDay(date)) {
@@ -842,12 +953,13 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     bool isOffDay, [
     bool isUpcoming = false,
     bool isPartialLeave = false,
+    bool isShortHours = false,
   ]) {
     Color color;
     bool showCross = false;
     if (empty || isUpcoming) {
       color = theme.colorScheme.surfaceContainerHighest.withValues(alpha:  0.25);
-    } else if (present && isPartialLeave) {
+    } else if (present && (isPartialLeave || isShortHours)) {
       color = Colors.orange;
     } else if (present) {
       color = theme.colorScheme.primary;
@@ -919,6 +1031,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
   Widget _buildAttendanceHistory(
     BuildContext context,
     List<AttendanceEntity> list,
+    DateTime now,
   ) {
     final theme = Theme.of(context);
     if (list.isEmpty) {
@@ -944,7 +1057,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     }
     final byDate = <DateTime, List<AttendanceEntity>>{};
     for (final a in list) {
-      final d = DateTime(a.checkInAt.year, a.checkInAt.month, a.checkInAt.day);
+      final checkInLocal = a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
+      final d = DateTime(checkInLocal.year, checkInLocal.month, checkInLocal.day);
       byDate.putIfAbsent(d, () => []).add(a);
     }
     final sortedDates = byDate.keys.toList()..sort((a, b) => b.compareTo(a));
@@ -963,7 +1077,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: sortedDates.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          separatorBuilder: (context, i) => const SizedBox(height: 10),
           itemBuilder: (context, i) {
             final date = sortedDates[i];
             final dayRecords = byDate[date]!;
@@ -986,6 +1100,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               dayRecords: dayRecords,
               isPartialLeave: isPartialLeave,
               earlyCheckoutNote: earlyCheckoutNote,
+              now: now,
               onTap: () async {
                 await _showAttendanceDetailSheet(context, date, dayRecords);
               },
@@ -996,10 +1111,35 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     );
   }
 
-  static DateTime _effectiveCheckOut(AttendanceEntity a) {
-    if (a.checkOutAt != null) return a.checkOutAt!;
-    final startOfDay = DateTime(a.checkInAt.year, a.checkInAt.month, a.checkInAt.day);
-    return startOfDay.add(const Duration(days: 1));
+  static DateTime _checkInLocal(AttendanceEntity a) {
+    return a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
+  }
+
+  static DateTime _effectiveCheckOut(AttendanceEntity a, {DateTime? now}) {
+    if (a.checkOutAt != null) return a.checkOutAt!.isUtc ? a.checkOutAt!.toLocal() : a.checkOutAt!;
+    final checkInLocal = _checkInLocal(a);
+    final startOfDay = DateTime(checkInLocal.year, checkInLocal.month, checkInLocal.day);
+    final endOfCheckInDay = startOfDay.add(const Duration(days: 1));
+    if (now != null) {
+      return now.isBefore(endOfCheckInDay) ? now : endOfCheckInDay;
+    }
+    return endOfCheckInDay;
+  }
+
+  /// Worked seconds for this session limited to the given calendar day (single-day only).
+  /// [now] When set, open sessions (no checkout) are capped to this time so we don't count future time.
+  static int _workedSecondsForDay(AttendanceEntity a, DateTime dateLocal, {DateTime? now}) {
+    final checkInLocal = _checkInLocal(a);
+    final startOfDay = DateTime(dateLocal.year, dateLocal.month, dateLocal.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    final endAt = a.checkOutAt != null
+        ? _effectiveCheckOut(a)
+        : (now != null ? (now.isBefore(endOfDay) ? now : endOfDay) : endOfDay);
+    final endAtCapped = endAt.isAfter(endOfDay) ? endOfDay : endAt;
+    final effectiveStart = checkInLocal.isBefore(startOfDay) ? startOfDay : checkInLocal;
+    if (!endAtCapped.isAfter(effectiveStart)) return 0;
+    final seconds = endAtCapped.difference(effectiveStart).inSeconds - a.breakSeconds;
+    return seconds.clamp(0, 86400 * 2);
   }
 
   Future<void> _showAttendanceDetailSheet(
@@ -1015,11 +1155,11 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     if (!context.mounted) return;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final now = DateTime.now();
     var totalWorked = 0;
     var totalBreak = 0;
     for (final a in dayRecords) {
-      final endAt = _effectiveCheckOut(a);
-      totalWorked += (endAt.difference(a.checkInAt).inSeconds - a.breakSeconds).clamp(0, 86400 * 2);
+      totalWorked += _workedSecondsForDay(a, date, now: now);
       totalBreak += a.breakSeconds;
     }
     final workedH = totalWorked ~/ 3600;
@@ -1307,13 +1447,14 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                                 ),
                               ],
                             ),
+                             if (dayOtHours > 0)
                              Row(
                                mainAxisSize: MainAxisSize.min,
                                children: [
                                  Icon(
                                    Icons.more_time_outlined,
                                    size: 20,
-                                   color: colorScheme.tertiary,
+                                   color: Colors.orange,
                                  ),
                                  const SizedBox(width: 10),
                                  Text(
@@ -1326,9 +1467,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                                  const SizedBox(width: 6),
                                  Text(
                                    LocaleDigits.format(
-                                     dayOtHours > 0
-                                         ? '+${dayOtHours.toStringAsFixed(1)} ${translation.of('analytics.h')}'
-                                         : '0${translation.of('analytics.h')}',
+                                     '+${dayOtHours.toStringAsFixed(1)} ${translation.of('analytics.h')}',
                                    ),
                                    style: theme.textTheme.titleSmall?.copyWith(
                                      fontWeight: FontWeight.w700,
@@ -1389,8 +1528,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                     ...dayRecords.asMap().entries.map((entry) {
                       final idx = entry.key;
                       final a = entry.value;
-                      final endAt = _effectiveCheckOut(a);
-                      final worked = (endAt.difference(a.checkInAt).inSeconds - a.breakSeconds).clamp(0, 86400 * 2);
+                      final worked = _workedSecondsForDay(a, date, now: now);
                       final h = worked ~/ 3600;
                       final m = (worked % 3600) ~/ 60;
                       final bM = a.breakSeconds ~/ 60;
@@ -1483,8 +1621,10 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                                     ? AppDateTimeFormat.formatTime(a.checkOutAt!)
                                     : '—',
                                 subtitle: hasCheckOut
-                                    ? AddressDisplay.getDisplay(a.checkOutAddress)
-                                    : (translation.of('dashboard.auto_closed_at_eod')),
+                                    ? (a.isAutoCheckout
+                                        ? translation.of('dashboard.auto_closed_at_eod')
+                                        : AddressDisplay.getDisplay(a.checkOutAddress))
+                                    : null,
                                 valueMuted: !hasCheckOut,
                               ),
                               const SizedBox(height: 10),
@@ -1635,4 +1775,172 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
       cubit.loadYear(year);
     }
   }
+}
+
+/// A calendar cell that shows a lightweight tooltip-style overlay on tap.
+class _DayCellWithTooltip extends StatefulWidget {
+  const _DayCellWithTooltip({
+    required this.date,
+    required this.dayRecords,
+    required this.theme,
+    required this.child,
+    required this.workedSecondsForDay,
+  });
+
+  final DateTime date;
+  final List<AttendanceEntity> dayRecords;
+  final ThemeData theme;
+  final Widget child;
+  final int Function(AttendanceEntity) workedSecondsForDay;
+
+  @override
+  State<_DayCellWithTooltip> createState() => _DayCellWithTooltipState();
+}
+
+class _DayCellWithTooltipState extends State<_DayCellWithTooltip> {
+  OverlayEntry? _overlay;
+  final _link = LayerLink();
+
+  void _show() {
+    _remove();
+    final totalWorked = widget.dayRecords.fold<int>(0, (s, a) => s + widget.workedSecondsForDay(a));
+    final totalBreak = widget.dayRecords.fold<int>(0, (s, a) => s + a.breakSeconds);
+    final workedH = totalWorked ~/ 3600;
+    final workedM = (totalWorked % 3600) ~/ 60;
+    final breakH = totalBreak ~/ 3600;
+    final breakM = (totalBreak % 3600) ~/ 60;
+    final otSeconds = (totalWorked - AppConstants.expectedWorkSecondsPerDay).clamp(0, 999999);
+    final remainingSeconds = totalWorked < AppConstants.expectedWorkSecondsPerDay
+        ? AppConstants.expectedWorkSecondsPerDay - totalWorked
+        : 0;
+    final otH = otSeconds ~/ 3600;
+    final otM = (otSeconds % 3600) ~/ 60;
+    final remainH = remainingSeconds ~/ 3600;
+    final remainM = (remainingSeconds % 3600) ~/ 60;
+    final theme = widget.theme;
+    final cs = theme.colorScheme;
+
+    _overlay = OverlayEntry(
+      builder: (ctx) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _remove,
+        child: Stack(
+          children: [
+            CompositedTransformFollower(
+              link: _link,
+              showWhenUnlinked: false,
+              offset: const Offset(0, -8),
+              targetAnchor: Alignment.topCenter,
+              followerAnchor: Alignment.bottomCenter,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  constraints: const BoxConstraints(minWidth: 160, maxWidth: 210),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: cs.surface.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: cs.outline.withValues(alpha: 0.25),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: cs.shadow.withValues(alpha: 0.10),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppDateTimeFormat.formatDate(widget.date),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _tipRow(theme, Icons.schedule_rounded,
+                          translation.of('attendance.worked'),
+                          LocaleDigits.format('${workedH}h ${workedM}m'), cs.primary),
+                      const SizedBox(height: 6),
+                      _tipRow(theme, Icons.free_breakfast_rounded,
+                          translation.of('attendance.breaks'),
+                          LocaleDigits.format(breakH > 0 ? '${breakH}h ${breakM}m' : '${breakM}m'),
+                          cs.tertiary),
+                      if (otSeconds > 0) ...[
+                        const SizedBox(height: 6),
+                        _tipRow(theme, Icons.more_time_outlined,
+                            translation.of('analytics.ot'),
+                            LocaleDigits.format('+${otH > 0 ? '${otH}h ' : ''}${otM}m'),
+                            Colors.orange),
+                      ],
+                      if (remainingSeconds > 0) ...[
+                        const SizedBox(height: 6),
+                        _tipRow(theme, Icons.hourglass_bottom_rounded,
+                            translation.of('analytics.short'),
+                            LocaleDigits.format('-${remainH > 0 ? '${remainH}h ' : ''}${remainM}m'),
+                            cs.error.withValues(alpha: 0.85)),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    Overlay.of(context).insert(_overlay!);
+  }
+
+  void _remove() {
+    _overlay?.remove();
+    _overlay = null;
+  }
+
+  @override
+  void dispose() {
+    _remove();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _link,
+      child: GestureDetector(
+        onTap: () => _overlay == null ? _show() : _remove(),
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+Widget _tipRow(ThemeData theme, IconData icon, String label, String value, Color color) {
+  return Row(
+    children: [
+      Icon(icon, size: 13, color: color),
+      const SizedBox(width: 6),
+      Expanded(
+        child: Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      Text(
+        value,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: theme.colorScheme.onSurface,
+        ),
+      ),
+    ],
+  );
 }

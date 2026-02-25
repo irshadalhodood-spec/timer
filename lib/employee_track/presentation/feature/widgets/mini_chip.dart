@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class MiniChip extends StatelessWidget {
-  const MiniChip({
+  const MiniChip({super.key, 
     required this.theme,
     required this.icon,
     required this.text,

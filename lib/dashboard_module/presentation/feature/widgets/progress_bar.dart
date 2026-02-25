@@ -8,7 +8,6 @@ const int _targetSeconds = AppConstants.expectedWorkSecondsPerDay;
 const double _barHeight = 10.0;
 const double _minSegmentWidth = 3.0;
 
-/// One segment of the progress bar in timeline order (work, break, work, break, … or remaining).
 class ProgressBarSegment {
   const ProgressBarSegment({
     required this.type,
@@ -16,7 +15,7 @@ class ProgressBarSegment {
     this.startAt,
     this.endAt,
   });
-  final String type; // 'work' | 'break' | 'remaining'
+  final String type;
   final int durationSeconds;
   final DateTime? startAt;
   final DateTime? endAt;
@@ -27,6 +26,8 @@ class ProgressBarSegment {
         return 'Work';
       case 'break':
         return 'Break';
+      case 'ot':
+        return 'OT';
       default:
         return 'Remaining';
     }
@@ -64,7 +65,6 @@ class NineHourProgressBar extends StatelessWidget {
 
   final int workedSeconds;
   final int breakSeconds;
-  /// When set, bar is drawn in timeline order (work → break → work → … → remaining) and each segment shows tooltip on hover/tap.
   final List<ProgressBarSegment>? segments;
 
   @override
@@ -72,7 +72,8 @@ class NineHourProgressBar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final workColor = colorScheme.primary;
     final breakColor = colorScheme.surfaceContainerHighest;
-    final remainingColor = colorScheme.error.withOpacity(0.1);
+    final otColor = Colors.orange;
+    final remainingColor = colorScheme.error.withValues(alpha: 0.1);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -86,32 +87,43 @@ class NineHourProgressBar extends StatelessWidget {
             segments!,
             workColor: workColor,
             breakColor: breakColor,
+            otColor: otColor,
             remainingColor: remainingColor,
           );
         }
 
-        // Legacy: single work, break, remaining
+        // Legacy: single work, break, OT, remaining
         final work = workedSeconds.clamp(0, _targetSeconds);
         final break_ = breakSeconds.clamp(0, _targetSeconds - work);
-        final remaining = (_targetSeconds - work - break_).clamp(0, _targetSeconds);
-        final total = work + break_ + remaining;
+        final ot = (workedSeconds - _targetSeconds).clamp(0, 999999);
+        final remaining = ot > 0 ? 0 : (_targetSeconds - work - break_).clamp(0, _targetSeconds);
+        final total = work + break_ + ot + remaining;
         final scale = total > 0 ? totalWidth / total : totalWidth;
 
         double workW = (work * scale).roundToDouble();
         double breakW = (break_ * scale).roundToDouble();
+        double otW = (ot * scale).roundToDouble();
         double remainingW = (remaining * scale).roundToDouble();
 
         if (work > 0 && workW < _minSegmentWidth) workW = _minSegmentWidth;
         if (break_ > 0 && breakW < _minSegmentWidth) breakW = _minSegmentWidth;
+        if (ot > 0 && otW < _minSegmentWidth) otW = _minSegmentWidth;
         if (remaining > 0 && remainingW < _minSegmentWidth) remainingW = _minSegmentWidth;
 
-        final sum = workW + breakW + remainingW;
+        final sum = workW + breakW + otW + remainingW;
         if (sum > totalWidth && sum > 0) {
-          workW = totalWidth * (workW / sum);
-          breakW = totalWidth * (breakW / sum);
-          remainingW = totalWidth * (remainingW / sum);
+          final ratio = totalWidth / sum;
+          workW *= ratio;
+          breakW *= ratio;
+          otW *= ratio;
+          remainingW *= ratio;
         }
-        remainingW = (totalWidth - workW - breakW).clamp(0.0, totalWidth);
+        // Snap last visible segment to fill exactly
+        if (ot > 0) {
+          otW = (totalWidth - workW - breakW).clamp(0.0, totalWidth);
+        } else {
+          remainingW = (totalWidth - workW - breakW).clamp(0.0, totalWidth);
+        }
 
         final children = <Widget>[];
         if (workW > 0) {
@@ -119,6 +131,9 @@ class NineHourProgressBar extends StatelessWidget {
         }
         if (breakW > 0) {
           children.add(SizedBox(width: breakW, height: _barHeight, child: ColoredBox(color: breakColor)));
+        }
+        if (otW > 0) {
+          children.add(SizedBox(width: otW, height: _barHeight, child: ColoredBox(color: otColor)));
         }
         if (remainingW > 0) {
           children.add(SizedBox(width: remainingW, height: _barHeight, child: ColoredBox(color: remainingColor)));
@@ -148,6 +163,7 @@ class NineHourProgressBar extends StatelessWidget {
     List<ProgressBarSegment> segments, {
     required Color workColor,
     required Color breakColor,
+    required Color otColor,
     required Color remainingColor,
   }) {
     final totalSeconds = segments.fold<int>(0, (s, e) => s + e.durationSeconds);
@@ -188,11 +204,20 @@ class NineHourProgressBar extends StatelessWidget {
     for (var i = 0; i < validSegments.length; i++) {
       final seg = validSegments[i];
       final w = i < widths.length ? widths[i] : totalWidth / validSegments.length;
-      final color = seg.type == 'work'
-          ? workColor
-          : seg.type == 'break'
-              ? breakColor
-              : remainingColor;
+      final Color color;
+      switch (seg.type) {
+        case 'work':
+          color = workColor;
+          break;
+        case 'break':
+          color = breakColor;
+          break;
+        case 'ot':
+          color = otColor;
+          break;
+        default:
+          color = remainingColor;
+      }
       children.add(
         Tooltip(
           triggerMode: TooltipTriggerMode.tap,

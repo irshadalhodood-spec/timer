@@ -19,6 +19,7 @@ class AttendanceEntity with _$AttendanceEntity {
     @Default(0) int breakSeconds,
     String? earlyCheckoutNote,
     @Default(false) bool isEarlyCheckout,
+    @Default(false) bool isAutoCheckout,
     String? deviceInfo,
     @Default(false) bool synced,
     DateTime? syncedAt,

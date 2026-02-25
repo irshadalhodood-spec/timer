@@ -128,9 +128,44 @@ class LiveDailySummary extends StatelessWidget {
       ));
     }
 
+    final totalWorkSoFar = segments
+        .where((s) => s.type == 'work')
+        .fold<int>(0, (s, e) => s + e.durationSeconds);
+    final otSeconds = (totalWorkSoFar - AppConstants.expectedWorkSecondsPerDay).clamp(0, 999999);
     final totalSoFar = segments.fold<int>(0, (s, e) => s + e.durationSeconds);
-    final remaining = (AppConstants.expectedWorkSecondsPerDay - totalSoFar).clamp(0, AppConstants.expectedWorkSecondsPerDay);
-    if (remaining > 0) {
+    final remaining = otSeconds > 0
+        ? 0
+        : (AppConstants.expectedWorkSecondsPerDay - totalSoFar).clamp(0, AppConstants.expectedWorkSecondsPerDay);
+
+    if (otSeconds > 0) {
+      // Replace the tail of the last work segment with OT
+      final lastWorkIndex = segments.lastIndexWhere((s) => s.type == 'work');
+      if (lastWorkIndex >= 0) {
+        final lastWork = segments[lastWorkIndex];
+        final regularWorkDuration = lastWork.durationSeconds - otSeconds;
+        if (regularWorkDuration > 0) {
+          segments[lastWorkIndex] = ProgressBarSegment(
+            type: 'work',
+            startAt: lastWork.startAt,
+            endAt: lastWork.startAt?.add(Duration(seconds: regularWorkDuration)),
+            durationSeconds: regularWorkDuration,
+          );
+          segments.add(ProgressBarSegment(
+            type: 'ot',
+            startAt: lastWork.startAt?.add(Duration(seconds: regularWorkDuration)),
+            endAt: lastWork.endAt,
+            durationSeconds: otSeconds,
+          ));
+        } else {
+          segments[lastWorkIndex] = ProgressBarSegment(
+            type: 'ot',
+            startAt: lastWork.startAt,
+            endAt: lastWork.endAt,
+            durationSeconds: lastWork.durationSeconds,
+          );
+        }
+      }
+    } else if (remaining > 0) {
       segments.add(ProgressBarSegment(
         type: 'remaining',
         startAt: now,

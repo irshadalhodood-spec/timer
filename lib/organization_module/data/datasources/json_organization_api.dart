@@ -9,7 +9,6 @@ import '../../domain/entities/organization_entity.dart';
 import '../../domain/repositories/organization_repository.dart';
 import '../../domain/repositories/employee_repository.dart';
 
-/// Loads organization and employees from api_endpoints.json, saves to SQLite via repositories, returns API-style response.
 class JsonOrganizationApi implements OrganizationApi {
   JsonOrganizationApi({
     required OrganizationRepository organizationRepository,

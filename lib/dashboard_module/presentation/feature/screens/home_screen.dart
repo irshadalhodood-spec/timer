@@ -13,6 +13,7 @@ import '../../../../base_module/presentation/components/custom_button/button.dar
 import '../../../../base_module/presentation/core/values/app_constants.dart';
 import '../../../domain/attendance_bloc.dart';
 import '../../../data/models/timeline_event.dart';
+import '../../../../base_module/presentation/feature/live_time/live_time_cubit.dart';
 import '../widgets/live_daily_summary.dart';
 import '../widgets/live_timer_text.dart';
 import '../widgets/progress_bar.dart';
@@ -68,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _updateAttendanceNotification(AttendanceStateCheckedIn state) {
     final now = DateTime.now();
+    final checkInAt = state.attendance.checkInAt;
     int workedSeconds = 0;
     for (final session in state.todaySessions) {
       if (session.id == state.attendance.id) {
@@ -77,12 +79,23 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
     final isOnBreak = state.breaks.any((b) => b.endAt == null);
+    // Break segments as offsets from check-in so the notification can draw them on the full work timeline
+    final breakSegments = <Map<String, int>>[];
+    for (final b in state.breaks) {
+      final startSeconds = b.startAt.difference(checkInAt).inSeconds.clamp(0, 999999);
+      final endSeconds = (b.endAt ?? now).difference(checkInAt).inSeconds.clamp(0, 999999);
+      if (endSeconds > startSeconds) {
+        breakSegments.add({'startSeconds': startSeconds, 'endSeconds': endSeconds});
+      }
+    }
+    breakSegments.sort((a, b) => (a['startSeconds'] ?? 0).compareTo(b['startSeconds'] ?? 0));
     context.read<AttendanceNotificationService>().showAttendanceNotification(
       checkInAtIso: state.attendance.checkInAt.toIso8601String(),
       breakSeconds: state.breakSeconds,
       workedSeconds: workedSeconds,
       isOnBreak: isOnBreak,
       expectedWorkSeconds: AppConstants.expectedWorkSecondsPerDay,
+      breakSegments: breakSegments,
     );
   }
 
@@ -190,7 +203,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildSecondaryActions(context, checkedInState),
               ],
               const SizedBox(height: 24),
-              _buildDailySummary(context, checkedInState, state is AttendanceStateCheckedOut ? state : null),
+              BlocBuilder<LiveTimeCubit, DateTime>(
+                buildWhen: (prev, next) =>
+                    prev.second != next.second ||
+                    prev.minute != next.minute ||
+                    prev.hour != next.hour,
+                builder: (context, now) => _buildDailySummary(
+                  context,
+                  checkedInState,
+                  state is AttendanceStateCheckedOut ? state : null,
+                  now: now,
+                ),
+              ),
               const SizedBox(height: 24),
               _buildActivityTimeline(context, checkedInState, state is AttendanceStateCheckedOut ? state : null),
             ],
@@ -439,17 +463,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDailySummary(
     BuildContext context,
     AttendanceStateCheckedIn? checkedInState,
-    AttendanceStateCheckedOut? checkedOutState,
-  ) {
+    AttendanceStateCheckedOut? checkedOutState, {
+    DateTime? now,
+  }) {
+    final nowRef = now ?? DateTime.now();
     int? todayWorked;
     int? todayBreak;
     if (checkedInState != null && checkedInState.todaySessions.isNotEmpty) {
       todayWorked = 0;
       todayBreak = 0;
-      final now = DateTime.now();
       for (final session in checkedInState.todaySessions) {
         if (session.id == checkedInState.attendance.id) {
-          final elapsed = now.difference(session.checkInAt).inSeconds;
+          final elapsed = nowRef.difference(session.checkInAt).inSeconds;
           todayWorked = (todayWorked! + elapsed - checkedInState.breakSeconds).clamp(0, 999999);
           todayBreak = todayBreak! + checkedInState.breakSeconds;
         } else if (session.checkOutAt != null) {

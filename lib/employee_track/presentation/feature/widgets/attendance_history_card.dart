@@ -7,18 +7,34 @@ import '../../../../base_module/presentation/util/locale_digits.dart';
 import 'mini_chip.dart';
 
 class AttendanceHistoryCard extends StatelessWidget {
-  const AttendanceHistoryCard({
+  const AttendanceHistoryCard({super.key, 
     required this.date,
     required this.dayRecords,
     required this.onTap,
     this.isPartialLeave = false,
     this.earlyCheckoutNote,
+    this.now,
   });
   final DateTime date;
   final List<AttendanceEntity> dayRecords;
   final VoidCallback onTap;
   final bool isPartialLeave;
   final String? earlyCheckoutNote;
+  final DateTime? now;
+
+  static int _workedSecondsForDay(AttendanceEntity a, DateTime dateLocal, {DateTime? now}) {
+    final checkInLocal = a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
+    final startOfDay = DateTime(dateLocal.year, dateLocal.month, dateLocal.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    final endAt = a.checkOutAt != null
+        ? (a.checkOutAt!.isUtc ? a.checkOutAt!.toLocal() : a.checkOutAt!)
+        : (now != null ? (now.isBefore(endOfDay) ? now : endOfDay) : endOfDay);
+    final endAtCapped = endAt.isAfter(endOfDay) ? endOfDay : endAt;
+    final effectiveStart = checkInLocal.isBefore(startOfDay) ? startOfDay : checkInLocal;
+    if (!endAtCapped.isAfter(effectiveStart)) return 0;
+    final seconds = endAtCapped.difference(effectiveStart).inSeconds - a.breakSeconds;
+    return seconds.clamp(0, 86400 * 2);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +46,7 @@ class AttendanceHistoryCard extends StatelessWidget {
       if (firstRecord == null || a.checkInAt.isBefore(firstRecord.checkInAt)) {
         firstRecord = a;
       }
-      if (a.checkOutAt != null) {
-        totalWorked +=
-            a.checkOutAt!.difference(a.checkInAt).inSeconds - a.breakSeconds;
-      }
+      totalWorked += _workedSecondsForDay(a, date, now: now);
       totalBreak += a.breakSeconds;
     }
     final h = totalWorked ~/ 3600;
@@ -45,7 +58,7 @@ class AttendanceHistoryCard extends StatelessWidget {
         : '—';
 
     return Material(
-      color: theme.colorScheme.surfaceContainerLow.withOpacity(0.5),
+      color: theme.colorScheme.surfaceContainerLow.withValues(alpha:0.5),
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -68,10 +81,10 @@ class AttendanceHistoryCard extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     color: isPartialLeave
-                        ? Colors.orange.withOpacity(0.2)
+                        ? Colors.orange.withValues(alpha:0.2)
                         : isPresent
                         ? theme.colorScheme.primaryContainer
-                        : theme.colorScheme.errorContainer.withOpacity(0.6),
+                        : theme.colorScheme.errorContainer.withValues(alpha:0.6),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   alignment: Alignment.center,

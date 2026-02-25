@@ -34,6 +34,7 @@ mixin _$AttendanceEntity {
   int get breakSeconds => throw _privateConstructorUsedError;
   String? get earlyCheckoutNote => throw _privateConstructorUsedError;
   bool get isEarlyCheckout => throw _privateConstructorUsedError;
+  bool get isAutoCheckout => throw _privateConstructorUsedError;
   String? get deviceInfo => throw _privateConstructorUsedError;
   bool get synced => throw _privateConstructorUsedError;
   DateTime? get syncedAt => throw _privateConstructorUsedError;
@@ -71,6 +72,7 @@ abstract class $AttendanceEntityCopyWith<$Res> {
     int breakSeconds,
     String? earlyCheckoutNote,
     bool isEarlyCheckout,
+    bool isAutoCheckout,
     String? deviceInfo,
     bool synced,
     DateTime? syncedAt,
@@ -107,6 +109,7 @@ class _$AttendanceEntityCopyWithImpl<$Res, $Val extends AttendanceEntity>
     Object? breakSeconds = null,
     Object? earlyCheckoutNote = freezed,
     Object? isEarlyCheckout = null,
+    Object? isAutoCheckout = null,
     Object? deviceInfo = freezed,
     Object? synced = null,
     Object? syncedAt = freezed,
@@ -167,6 +170,10 @@ class _$AttendanceEntityCopyWithImpl<$Res, $Val extends AttendanceEntity>
                 ? _value.isEarlyCheckout
                 : isEarlyCheckout // ignore: cast_nullable_to_non_nullable
                       as bool,
+            isAutoCheckout: null == isAutoCheckout
+                ? _value.isAutoCheckout
+                : isAutoCheckout // ignore: cast_nullable_to_non_nullable
+                      as bool,
             deviceInfo: freezed == deviceInfo
                 ? _value.deviceInfo
                 : deviceInfo // ignore: cast_nullable_to_non_nullable
@@ -216,6 +223,7 @@ abstract class _$$AttendanceEntityImplCopyWith<$Res>
     int breakSeconds,
     String? earlyCheckoutNote,
     bool isEarlyCheckout,
+    bool isAutoCheckout,
     String? deviceInfo,
     bool synced,
     DateTime? syncedAt,
@@ -251,6 +259,7 @@ class __$$AttendanceEntityImplCopyWithImpl<$Res>
     Object? breakSeconds = null,
     Object? earlyCheckoutNote = freezed,
     Object? isEarlyCheckout = null,
+    Object? isAutoCheckout = null,
     Object? deviceInfo = freezed,
     Object? synced = null,
     Object? syncedAt = freezed,
@@ -311,6 +320,10 @@ class __$$AttendanceEntityImplCopyWithImpl<$Res>
             ? _value.isEarlyCheckout
             : isEarlyCheckout // ignore: cast_nullable_to_non_nullable
                   as bool,
+        isAutoCheckout: null == isAutoCheckout
+            ? _value.isAutoCheckout
+            : isAutoCheckout // ignore: cast_nullable_to_non_nullable
+                  as bool,
         deviceInfo: freezed == deviceInfo
             ? _value.deviceInfo
             : deviceInfo // ignore: cast_nullable_to_non_nullable
@@ -353,6 +366,7 @@ class _$AttendanceEntityImpl implements _AttendanceEntity {
     this.breakSeconds = 0,
     this.earlyCheckoutNote,
     this.isEarlyCheckout = false,
+    this.isAutoCheckout = false,
     this.deviceInfo,
     this.synced = false,
     this.syncedAt,
@@ -392,6 +406,9 @@ class _$AttendanceEntityImpl implements _AttendanceEntity {
   @JsonKey()
   final bool isEarlyCheckout;
   @override
+  @JsonKey()
+  final bool isAutoCheckout;
+  @override
   final String? deviceInfo;
   @override
   @JsonKey()
@@ -405,7 +422,7 @@ class _$AttendanceEntityImpl implements _AttendanceEntity {
 
   @override
   String toString() {
-    return 'AttendanceEntity(id: $id, userId: $userId, checkInAt: $checkInAt, checkOutAt: $checkOutAt, checkInLat: $checkInLat, checkInLng: $checkInLng, checkInAddress: $checkInAddress, checkOutLat: $checkOutLat, checkOutLng: $checkOutLng, checkOutAddress: $checkOutAddress, breakSeconds: $breakSeconds, earlyCheckoutNote: $earlyCheckoutNote, isEarlyCheckout: $isEarlyCheckout, deviceInfo: $deviceInfo, synced: $synced, syncedAt: $syncedAt, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'AttendanceEntity(id: $id, userId: $userId, checkInAt: $checkInAt, checkOutAt: $checkOutAt, checkInLat: $checkInLat, checkInLng: $checkInLng, checkInAddress: $checkInAddress, checkOutLat: $checkOutLat, checkOutLng: $checkOutLng, checkOutAddress: $checkOutAddress, breakSeconds: $breakSeconds, earlyCheckoutNote: $earlyCheckoutNote, isEarlyCheckout: $isEarlyCheckout, isAutoCheckout: $isAutoCheckout, deviceInfo: $deviceInfo, synced: $synced, syncedAt: $syncedAt, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -437,6 +454,8 @@ class _$AttendanceEntityImpl implements _AttendanceEntity {
                 other.earlyCheckoutNote == earlyCheckoutNote) &&
             (identical(other.isEarlyCheckout, isEarlyCheckout) ||
                 other.isEarlyCheckout == isEarlyCheckout) &&
+            (identical(other.isAutoCheckout, isAutoCheckout) ||
+                other.isAutoCheckout == isAutoCheckout) &&
             (identical(other.deviceInfo, deviceInfo) ||
                 other.deviceInfo == deviceInfo) &&
             (identical(other.synced, synced) || other.synced == synced) &&
@@ -465,6 +484,7 @@ class _$AttendanceEntityImpl implements _AttendanceEntity {
     breakSeconds,
     earlyCheckoutNote,
     isEarlyCheckout,
+    isAutoCheckout,
     deviceInfo,
     synced,
     syncedAt,
@@ -504,6 +524,7 @@ abstract class _AttendanceEntity implements AttendanceEntity {
     final int breakSeconds,
     final String? earlyCheckoutNote,
     final bool isEarlyCheckout,
+    final bool isAutoCheckout,
     final String? deviceInfo,
     final bool synced,
     final DateTime? syncedAt,
@@ -540,6 +561,8 @@ abstract class _AttendanceEntity implements AttendanceEntity {
   String? get earlyCheckoutNote;
   @override
   bool get isEarlyCheckout;
+  @override
+  bool get isAutoCheckout;
   @override
   String? get deviceInfo;
   @override

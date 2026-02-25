@@ -18,6 +18,10 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       _local.getTodayCheckIn(userId);
 
   @override
+  Future<AttendanceEntity?> getOpenAttendance(String userId) =>
+      _local.getOpenAttendance(userId);
+
+  @override
   Future<List<AttendanceEntity>> getAttendancesByUser(String userId, {DateTime? from, DateTime? to}) async {
     if (_api != null && from != null && to != null) {
       final response = await _api.getAttendanceHistory(

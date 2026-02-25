@@ -29,6 +29,8 @@ import 'employee_track/domain/repositories/break_record_repository.dart';
 import 'organization_module/domain/repositories/employee_repository.dart';
 import 'organization_module/domain/repositories/organization_repository.dart';
 import 'base_module/domain/repositories/sync_queue_repository.dart';
+import 'base_module/domain/repositories/working_hours_repository.dart';
+import 'base_module/data/repositories/working_hours_repository_impl.dart';
 import 'base_module/presentation/feature/live_time/live_time_cubit.dart';
 import 'base_module/presentation/sync_bloc/sync_bloc.dart';
 import 'dashboard_module/domain/attendance_bloc.dart';
@@ -72,6 +74,9 @@ Widget buildAppProviders({required Widget child}) {
         ),
       ),
       RepositoryProvider<SyncQueueRepository>(create: (_) => SyncQueueRepositoryImpl()),
+      RepositoryProvider<WorkingHoursRepository>(
+        create: (context) => WorkingHoursRepositoryImpl(apiClient: context.read<ApiClient>()),
+      ),
       RepositoryProvider<OrganizationRepository>(
         create: (context) => OrganizationRepositoryImpl(
           authRepository: context.read<AuthRepository>(),
@@ -133,6 +138,7 @@ Widget buildDashboardProviders({
           attendanceRepository: context.read<AttendanceRepository>(),
           breakRecordRepository: context.read<BreakRecordRepository>(),
           syncQueueRepository: context.read<SyncQueueRepository>(),
+          workingHoursRepository: context.read<WorkingHoursRepository>(),
           userId: userId,
         )..add(const AttendanceLoadRequested()),
       ),

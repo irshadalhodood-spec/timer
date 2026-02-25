@@ -51,6 +51,15 @@ class MainActivity : FlutterActivity() {
                         val workedSeconds = call.argument<Int>("workedSeconds") ?: 0
                         val isOnBreak = call.argument<Boolean>("isOnBreak") ?: false
                         val expectedWorkSeconds = call.argument<Int>("expectedWorkSeconds") ?: 28800
+                        val rawSegments = call.argument<ArrayList<*>>("breakSegments") ?: arrayListOf<Any>()
+                        val breakSegments = rawSegments.mapNotNull { item ->
+                            @Suppress("UNCHECKED_CAST")
+                            (item as? Map<String, Any>)?.let { m ->
+                                val s = (m["startSeconds"] as? Number)?.toInt() ?: return@let null
+                                val e = (m["endSeconds"] as? Number)?.toInt() ?: return@let null
+                                if (e > s) s to e else null
+                            }
+                        }
                         AttendanceNotificationHelper.showOrUpdate(
                             context = this@MainActivity,
                             checkInAtIso = checkInAtIso,
@@ -58,6 +67,7 @@ class MainActivity : FlutterActivity() {
                             workedSeconds = workedSeconds,
                             isOnBreak = isOnBreak,
                             expectedWorkSeconds = expectedWorkSeconds,
+                            breakSegments = breakSegments,
                         )
                         result.success(null)
                     }

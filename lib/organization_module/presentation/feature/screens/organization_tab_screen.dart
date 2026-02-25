@@ -156,12 +156,12 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.12),
+          color: colorScheme.outline.withValues(alpha:0.12),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.06),
+            color: colorScheme.shadow.withValues(alpha:0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -246,7 +246,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withOpacity(0.8),
+                          color: colorScheme.primaryContainer.withValues(alpha:0.8),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -290,7 +290,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
           end: Alignment.bottomRight,
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
+            colorScheme.primary.withValues(alpha:0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
@@ -320,7 +320,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withValues(alpha:0.1),
         ),
       ),
       child: Column(
@@ -421,12 +421,12 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
           decoration: BoxDecoration(
             color: selected
                 ? colorScheme.primaryContainer
-                : colorScheme.surfaceContainerHighest.withOpacity(0.8),
+                : colorScheme.surfaceContainerHighest.withValues(alpha:0.8),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: selected
-                  ? colorScheme.primary.withOpacity(0.5)
-                  : colorScheme.outline.withOpacity(0.15),
+                  ? colorScheme.primary.withValues(alpha:0.5)
+                  : colorScheme.outline.withValues(alpha:0.15),
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -480,7 +480,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: colorScheme.outline.withOpacity(0.2),
+            color: colorScheme.outline.withValues(alpha:0.2),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -503,7 +503,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha:0.1),
         ),
       ),
       child: InkWell(
@@ -589,7 +589,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
                       shape: BoxShape.circle,
                       color: e.isOnline
                           ? theme.colorScheme.primary
-                          : theme.colorScheme.outline.withOpacity(0.6),
+                          : theme.colorScheme.outline.withValues(alpha:0.6),
                     ),
                   ),
                   const SizedBox(width: 12),

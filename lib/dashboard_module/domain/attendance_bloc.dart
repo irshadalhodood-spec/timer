@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../attendance_module/domain/entities/attendance_entity.dart';
 import '../../employee_track/domain/entities/break_record_entity.dart';
 import '../../base_module/domain/entities/sync_queue_entity.dart';
+import '../../base_module/domain/entities/working_hours_config.dart';
 import '../../attendance_module/domain/repositories/attendance_repository.dart';
 import '../../employee_track/domain/repositories/break_record_repository.dart';
 import '../../base_module/domain/repositories/sync_queue_repository.dart';
+import '../../base_module/domain/repositories/working_hours_repository.dart';
 
 part 'attendance_event.dart';
 part 'attendance_state.dart';
@@ -15,10 +17,12 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     required AttendanceRepository attendanceRepository,
     required BreakRecordRepository breakRecordRepository,
     required SyncQueueRepository syncQueueRepository,
+    required WorkingHoursRepository workingHoursRepository,
     required String userId,
   })  : _attendance = attendanceRepository,
         _breakRecord = breakRecordRepository,
         _syncQueue = syncQueueRepository,
+        _workingHours = workingHoursRepository,
         _userId = userId,
         super(AttendanceState.initial) {
     on<AttendanceLoadRequested>(_onLoadRequested);
@@ -32,12 +36,67 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   final AttendanceRepository _attendance;
   final BreakRecordRepository _breakRecord;
   final SyncQueueRepository _syncQueue;
+  final WorkingHoursRepository _workingHours;
   final String _userId;
+
+  /// Effective auto-checkout time for a session that started on [checkInDateLocal] (midnight local).
+  DateTime _effectiveAutoCheckOutTime(WorkingHoursConfig config, DateTime checkInDateLocal) {
+    final startOfDay = DateTime(checkInDateLocal.year, checkInDateLocal.month, checkInDateLocal.day);
+    if (config.endsNextDay) {
+      final nextDay = startOfDay.add(const Duration(days: 1));
+      return DateTime(
+        nextDay.year,
+        nextDay.month,
+        nextDay.day,
+        config.shiftEndHour,
+        config.shiftEndMinute,
+      );
+    }
+    return DateTime(
+      startOfDay.year,
+      startOfDay.month,
+      startOfDay.day,
+      config.shiftEndHour,
+      config.shiftEndMinute,
+    );
+  }
 
   Future<void> _onLoadRequested(AttendanceLoadRequested event, Emitter<AttendanceState> emit) async {
     try {
       final now = DateTime.now();
       final startOfToday = DateTime(now.year, now.month, now.day);
+
+      // Auto-checkout: if there is an open session from a previous day, close it at effective end time.
+      final open = await _attendance.getOpenAttendance(_userId);
+      if (open != null) {
+        final checkInLocal = open.checkInAt.isUtc ? open.checkInAt.toLocal() : open.checkInAt;
+        final checkInDay = DateTime(checkInLocal.year, checkInLocal.month, checkInLocal.day);
+        if (checkInDay.isBefore(startOfToday)) {
+          final config = await _workingHours.getWorkingHours();
+          final effectiveEnd = _effectiveAutoCheckOutTime(config, checkInDay);
+          if (!now.isBefore(effectiveEnd)) {
+            final breaks = await _breakRecord.getByAttendanceId(open.id);
+            final breakSeconds = _totalBreakSecondsFromRecords(breaks, effectiveEnd);
+            final updated = open.copyWith(
+              checkOutAt: effectiveEnd,
+              breakSeconds: breakSeconds,
+              isAutoCheckout: true,
+              updatedAt: effectiveEnd,
+            );
+            await _attendance.saveAttendance(updated);
+            await _syncQueue.enqueue(SyncQueueEntity(
+              id: 'sync_out_${open.id}',
+              entityType: SyncEntityType.checkOut,
+              action: SyncAction.update,
+              entityId: open.id,
+              payloadJson: '{"attendanceId":"${open.id}"}',
+              createdAt: now,
+            ));
+            // Continue to load state below (no open session from today yet).
+          }
+        }
+      }
+
       final endOfToday = startOfToday.add(const Duration(days: 1));
       final todaySessionsRaw = await _attendance.getAttendancesByUser(
         _userId,

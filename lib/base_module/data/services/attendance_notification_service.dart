@@ -27,12 +27,14 @@ class AttendanceNotificationService {
 
   /// Shows or updates the persistent attendance notification in the notification area.
   /// [expectedWorkSeconds] Target work seconds per day (e.g. 8h) for the progress bar.
+  /// [breakSegments] Each item is {startSeconds, endSeconds} from check-in, so the timeline bar can show breaks at actual positions.
   Future<void> showAttendanceNotification({
     required String checkInAtIso,
     required int breakSeconds,
     required int workedSeconds,
     required bool isOnBreak,
     required int expectedWorkSeconds,
+    List<Map<String, int>> breakSegments = const [],
   }) async {
     if (!Platform.isAndroid && !Platform.isIOS) return;
     try {
@@ -42,6 +44,7 @@ class AttendanceNotificationService {
         'workedSeconds': workedSeconds,
         'isOnBreak': isOnBreak,
         'expectedWorkSeconds': expectedWorkSeconds,
+        'breakSegments': breakSegments,
       });
     } on PlatformException catch (_) {
       // Ignore if channel not implemented (e.g. unsupported platform)

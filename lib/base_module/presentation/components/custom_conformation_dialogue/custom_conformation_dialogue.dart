@@ -32,7 +32,7 @@ class _ConfirmationDialogState extends State<ConfirmationDialog> {
     var size = MediaQuery.of(context).size;
 
     return Dialog(
-      shadowColor: Theme.of(context).shadowColor.withOpacity(0.1),
+      shadowColor: Theme.of(context).shadowColor.withValues(alpha:0.1),
       alignment: Alignment.center,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.cornerRadius * 0.3),
@@ -98,7 +98,7 @@ class _ConfirmationDialogState extends State<ConfirmationDialog> {
                       textColor: Theme.of(context).colorScheme.error,
                       borderColor: Theme.of(context).colorScheme.error,
                       borderWidth: 0.5,
-                      bgColor: Theme.of(context).colorScheme.errorContainer.withOpacity(0.05),
+                      bgColor: Theme.of(context).colorScheme.errorContainer.withValues(alpha:0.05),
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                     ),
                   ),

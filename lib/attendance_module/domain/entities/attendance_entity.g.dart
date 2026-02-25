@@ -24,6 +24,7 @@ _$AttendanceEntityImpl _$$AttendanceEntityImplFromJson(
   breakSeconds: (json['breakSeconds'] as num?)?.toInt() ?? 0,
   earlyCheckoutNote: json['earlyCheckoutNote'] as String?,
   isEarlyCheckout: json['isEarlyCheckout'] as bool? ?? false,
+  isAutoCheckout: json['isAutoCheckout'] as bool? ?? false,
   deviceInfo: json['deviceInfo'] as String?,
   synced: json['synced'] as bool? ?? false,
   syncedAt: json['syncedAt'] == null
@@ -53,6 +54,7 @@ Map<String, dynamic> _$$AttendanceEntityImplToJson(
   'breakSeconds': instance.breakSeconds,
   'earlyCheckoutNote': instance.earlyCheckoutNote,
   'isEarlyCheckout': instance.isEarlyCheckout,
+  'isAutoCheckout': instance.isAutoCheckout,
   'deviceInfo': instance.deviceInfo,
   'synced': instance.synced,
   'syncedAt': instance.syncedAt?.toIso8601String(),

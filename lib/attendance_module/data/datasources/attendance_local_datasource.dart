@@ -18,6 +18,7 @@ class AttendanceLocalDatasource {
       breakSeconds: (row['break_seconds'] as int?) ?? 0,
       earlyCheckoutNote: row['early_checkout_note'] as String?,
       isEarlyCheckout: (row['is_early_checkout'] as int?) == 1,
+      isAutoCheckout: (row['is_auto_checkout'] as int?) == 1,
       deviceInfo: row['device_info'] as String?,
       synced: (row['synced'] as int?) == 1,
       syncedAt: row['synced_at'] != null ? DateTime.tryParse(row['synced_at'] as String) : null,
@@ -41,6 +42,7 @@ class AttendanceLocalDatasource {
       'break_seconds': e.breakSeconds,
       'early_checkout_note': e.earlyCheckoutNote,
       'is_early_checkout': e.isEarlyCheckout ? 1 : 0,
+      'is_auto_checkout': e.isAutoCheckout ? 1 : 0,
       'device_info': e.deviceInfo,
       'synced': e.synced ? 1 : 0,
       'synced_at': e.syncedAt?.toIso8601String(),
@@ -58,6 +60,20 @@ class AttendanceLocalDatasource {
       'attendances',
       where: 'user_id = ? AND check_in_at >= ? AND check_in_at < ? AND check_out_at IS NULL',
       whereArgs: [userId, start.toIso8601String(), end.toIso8601String()],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return _rowToEntity(rows.first as Map<String, dynamic>);
+  }
+
+  /// Returns any open (unchecked-out) attendance, e.g. from yesterday if user didn't check out.
+  Future<AttendanceEntity?> getOpenAttendance(String userId) async {
+    final db = await AppDatabase.database;
+    final rows = await db.query(
+      'attendances',
+      where: 'user_id = ? AND check_out_at IS NULL',
+      whereArgs: [userId],
+      orderBy: 'check_in_at DESC',
       limit: 1,
     );
     if (rows.isEmpty) return null;

@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 /// All attendance, org, employees, session and sync queue stored here.
 class AppDatabase {
   static const _dbName = 'employee_track.db';
-  static const _dbVersion = 3;
+  static const _dbVersion = 4;
 
   static Database? _db;
   static final _lock = _DatabaseLock();
@@ -39,6 +39,9 @@ class AppDatabase {
     if (oldVersion < 3) {
       await db.execute('ALTER TABLE break_records ADD COLUMN start_address TEXT');
       await db.execute('ALTER TABLE break_records ADD COLUMN end_address TEXT');
+    }
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE attendances ADD COLUMN is_auto_checkout INTEGER DEFAULT 0');
     }
   }
 
@@ -98,6 +101,7 @@ class AppDatabase {
         break_seconds INTEGER DEFAULT 0,
         early_checkout_note TEXT,
         is_early_checkout INTEGER DEFAULT 0,
+        is_auto_checkout INTEGER DEFAULT 0,
         device_info TEXT,
         synced INTEGER DEFAULT 0,
         synced_at TEXT,

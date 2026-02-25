@@ -36,7 +36,8 @@
     "break_start": "Break start",
     "break_end": "Break end",
     "geo_tagged": "Geo-tagged",
-    "today_total":"Today Total: "
+    "today_total":"Today Total: ",
+    "auto_closed_at_eod": "Auto-closed at end of day"
   },
   "attendance": {
     "check_in_at": "Check in",

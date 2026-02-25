@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Notification action button colors -->
-    <color name="notification_btn_check_out">#E53935</color>
-    <color name="notification_btn_start_break">#FB8C00</color>
-    <color name="notification_btn_end_break">#43A047</color>
-    <!-- Notification accent (clocked in) -->
-    <color name="notification_accent">#1E88E5</color>
-    <!-- Progress bar segment colors (match dashboard: work / break / remaining) -->
-    <color name="notification_progress_work">#1E88E5</color>
-    <color name="notification_progress_break">#FB8C00</color>
-    <color name="notification_progress_remaining">#9E9E9E</color>
+    <!-- Notification accent -->
+    <color name="notification_accent">#000000</color>
+    <!-- Single-line progress: worked = green, break = yellow, pending = red -->
+    <color name="notification_progress_work">#4CAF50</color>
+    <color name="notification_progress_break">#FFC107</color>
+    <color name="notification_progress_remaining">#F44336</color>
+    <!-- Pill buttons -->
+    <color name="notification_btn_checkout_red">#D32F2F</color>
+    <color name="notification_btn_start_break_yellow">#FBC02D</color>
+    <color name="notification_btn_end_break_grey">#607D8B</color>
 </resources>

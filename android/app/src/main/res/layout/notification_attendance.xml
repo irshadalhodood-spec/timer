@@ -9,7 +9,7 @@
         android:id="@+id/notification_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="?android:attr/textColorPrimary"
+        android:textColor="@android:color/black"
         android:textSize="15sp"
         android:textStyle="bold"
         android:letterSpacing="0.02" />
@@ -19,90 +19,70 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:textColor="?android:attr/textColorSecondary"
+        android:textColor="@android:color/black"
         android:textSize="12sp"
-        android:maxLines="2"
+        android:maxLines="1"
         android:ellipsize="end" />
 
-    <!-- Segmented progress: Work (blue) | Break (orange) | Remaining (gray) -->
+    <!-- Single proportional progress bar: work (green) | break (yellow) | remaining (red), like NineHourProgressBar -->
+    <ImageView
+        android:id="@+id/notification_progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:layout_marginTop="10dp"
+        android:scaleType="fitXY"
+        android:contentDescription="@null" />
+
+    <!-- 3 pill buttons: Check Out (red), Start Break (yellow), End Break (grey) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:orientation="vertical">
+        android:orientation="horizontal"
+        android:gravity="start">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/notification_btn_check_out"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            <TextView
-                android:id="@+id/notification_label_work"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="11sp"
-                android:textColor="@color/notification_progress_work"
-                android:textStyle="bold"
-                android:minWidth="36dp" />
-            <ProgressBar
-                android:id="@+id/notification_progress_work"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="0dp"
-                android:layout_height="8dp"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:max="100"
-                android:progress="0" />
-        </LinearLayout>
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/notification_pill_checkout"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="@string/notification_action_check_out"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/notification_btn_start_break"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            <TextView
-                android:id="@+id/notification_label_break"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="11sp"
-                android:textColor="@color/notification_progress_break"
-                android:textStyle="bold"
-                android:minWidth="36dp" />
-            <ProgressBar
-                android:id="@+id/notification_progress_break"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="0dp"
-                android:layout_height="8dp"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:max="100"
-                android:progress="0" />
-        </LinearLayout>
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/notification_pill_start_break"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="@string/notification_action_start_break"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/notification_btn_end_break"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            <TextView
-                android:id="@+id/notification_label_remaining"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="11sp"
-                android:textColor="@color/notification_progress_remaining"
-                android:textStyle="bold"
-                android:minWidth="36dp" />
-            <ProgressBar
-                android:id="@+id/notification_progress_remaining"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="0dp"
-                android:layout_height="8dp"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:max="100"
-                android:progress="0" />
-        </LinearLayout>
+            android:background="@drawable/notification_pill_end_break"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="@string/notification_action_end_break"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
     </LinearLayout>
 </LinearLayout>

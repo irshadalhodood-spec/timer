@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 class SettingsTile extends StatelessWidget {
-  const SettingsTile({
+  const SettingsTile({super.key, 
     required this.icon,
     required this.label,
     required this.selected,
