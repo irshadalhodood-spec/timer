@@ -2,8 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:employee_track/organization_module/domain/entities/employee_entity.dart';
 import 'package:employee_track/organization_module/domain/entities/organization_entity.dart';
 
-/// State for organization tab: org details, search/filter, and employee list.
-/// When only [employees] or [isEmployeesLoading] change, only the list section rebuilds.
+
 class OrganizationTabState extends Equatable {
   const OrganizationTabState({
     this.organization,
@@ -21,7 +20,6 @@ class OrganizationTabState extends Equatable {
   final String searchQuery;
   final String? selectedDepartmentId;
 
-  /// Pass [selectedDepartmentId] to set; pass [clearSelectedDepartmentId: true] to set to null.
   OrganizationTabState copyWith({
     OrganizationEntity? organization,
     List<EmployeeEntity>? employees,

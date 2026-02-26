@@ -1,13 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Notification accent -->
-    <color name="notification_accent">#000000</color>
-    <!-- Single-line progress: worked = green, break = yellow, pending = red -->
+    <!-- ── Notification layout (light theme) ─────────────────────────── -->
+    <color name="notif_bg">#FFFFFF</color>
+    <color name="notif_text_primary">#1A1A1A</color>
+    <color name="notif_text_secondary">#616161</color>
+    <!-- Worked-time chip -->
+    <color name="notif_chip_bg">#E8F5E9</color>
+    <color name="notif_chip_text">#2E7D32</color>
+    <!-- On-break chip variant (used via tint in helper) -->
+    <color name="notif_chip_bg_break">#FFF8E1</color>
+    <color name="notif_chip_text_break">#F57F17</color>
+
+    <!-- ── Progress bar segments ──────────────────────────────────────── -->
     <color name="notification_progress_work">#4CAF50</color>
     <color name="notification_progress_break">#FFC107</color>
-    <color name="notification_progress_remaining">#F44336</color>
-    <!-- Pill buttons -->
+    <color name="notification_progress_ot">#FF6D00</color>
+    <color name="notification_progress_remaining">#E0E0E0</color>
+
+    <!-- ── Action pill buttons ────────────────────────────────────────── -->
     <color name="notification_btn_checkout_red">#D32F2F</color>
-    <color name="notification_btn_start_break_yellow">#FBC02D</color>
-    <color name="notification_btn_end_break_grey">#607D8B</color>
+    <color name="notification_btn_start_break_yellow">#F57C00</color>
+    <color name="notification_btn_end_break_grey">#455A64</color>
+
+    <!-- ── Misc ───────────────────────────────────────────────────────── -->
+    <color name="notification_accent">#4CAF50</color>
 </resources>

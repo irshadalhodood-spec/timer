@@ -2,6 +2,7 @@
 <resources>
     <string name="notification_channel_attendance">Attendance</string>
     <string name="notification_title_clocked_in">Clocked in</string>
+    <string name="notification_title_on_break">On Break</string>
     <string name="notification_working">Started %1$s • Break %2$s • Worked %3$s</string>
     <string name="notification_on_break">Started %1$s • Break %2$s • Worked %3$s (On break)</string>
     <string name="notification_action_check_out">Check Out</string>

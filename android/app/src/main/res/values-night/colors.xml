@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ── Notification layout (dark theme overrides) ────────────────── -->
+    <color name="notif_bg">#00FFFFFF</color>
+    <color name="notif_text_primary">#F5F5F5</color>
+    <color name="notif_text_secondary">#9E9E9E</color>
+    <!-- Worked-time chip -->
+    <color name="notif_chip_bg">#1B5E20</color>
+    <color name="notif_chip_text">#A5D6A7</color>
+    <!-- On-break chip variant -->
+    <color name="notif_chip_bg_break">#4E342E</color>
+    <color name="notif_chip_text_break">#FFCC80</color>
+
+    <!-- ── Progress bar (same vivid colours work on dark too) ─────────── -->
+    <color name="notification_progress_work">#66BB6A</color>
+    <color name="notification_progress_break">#FFD54F</color>
+    <color name="notification_progress_ot">#FF6D00</color>
+    <color name="notification_progress_remaining">#474747</color>
+
+    <!-- ── Action pill buttons (slightly lighter for dark bg) ─────────── -->
+    <color name="notification_btn_checkout_red">#EF5350</color>
+    <color name="notification_btn_start_break_yellow">#FFA726</color>
+    <color name="notification_btn_end_break_grey">#78909C</color>
+
+    <!-- ── Misc ───────────────────────────────────────────────────────── -->
+    <color name="notification_accent">#66BB6A</color>
+</resources>

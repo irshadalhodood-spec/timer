@@ -4,7 +4,7 @@ import '../../domain/entities/attendance_entity.dart';
 
 
 class MockAttendanceApi implements AttendanceApi {
-  MockAttendanceApi({this.simulatedDelay = const Duration(milliseconds: 600)});
+  MockAttendanceApi({this.simulatedDelay = const Duration(milliseconds: 6)});
 
   final Duration simulatedDelay;
 

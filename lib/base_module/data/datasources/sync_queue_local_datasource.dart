@@ -94,7 +94,7 @@ class SyncQueueLocalDatasource {
   Stream<int> watchPendingCount() async* {
     while (true) {
       yield await pendingCount();
-      await Future<void>.delayed(const Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(milliseconds: 60));
     }
   }
 }

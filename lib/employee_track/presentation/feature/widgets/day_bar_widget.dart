@@ -88,12 +88,14 @@ class DayBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: trackColor,
                   borderRadius: BorderRadius.circular(_barRadius),
-                  border: isPartialLeave
-                      ? Border.all(color: Colors.orange, width: .5)
-                      : isSelected
+                  border: 
+                  // isPartialLeave
+                  //     ? Border.all(color: Colors.orange, width: .5)
+                  //     :
+                       isSelected
                           ? Border.all(
                               color: theme.colorScheme.primary,
-                              width: .5,
+                              width: 0,
                             )
                           : null,
                 ),

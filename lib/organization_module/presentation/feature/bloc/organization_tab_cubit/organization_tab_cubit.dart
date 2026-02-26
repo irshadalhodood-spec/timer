@@ -4,8 +4,7 @@ import 'package:employee_track/organization_module/domain/datasources/organizati
 import 'package:employee_track/organization_module/domain/repositories/organization_repository.dart';
 import 'organization_tab_state.dart';
 
-/// Cubit for organization tab: loads org + employees, and refetches only
-/// employees when search/department change to avoid full scaffold refresh.
+
 class OrganizationTabCubit extends Cubit<OrganizationTabState> {
   OrganizationTabCubit({
     required String orgId,
@@ -23,7 +22,6 @@ class OrganizationTabCubit extends Cubit<OrganizationTabState> {
   final OrganizationRepository _orgRepo;
   final EmployeeRepository _empRepo;
 
-  /// Initial load: sync from API, then load org + employees.
   Future<void> load() async {
     emit(state.copyWith(isInitialLoading: true));
     try {
@@ -64,7 +62,6 @@ class OrganizationTabCubit extends Cubit<OrganizationTabState> {
     _loadEmployees();
   }
 
-  /// Refetch only employees; org and scaffold stay stable.
   Future<void> _loadEmployees() async {
     emit(state.copyWith(isEmployeesLoading: true));
     try {

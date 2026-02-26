@@ -30,7 +30,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final session = await _auth.getSession();
       if (session != null) {
-        await Future.delayed(const Duration(seconds: 10));
         emit(AuthState.authenticated(session));
       } else {
         final inviteUrl = await _auth.getOrganizationInviteUrl();
@@ -51,7 +50,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     
       final session = await _auth.login(event.username, event.password);
       if (session != null) {
-        await Future.delayed(const Duration(seconds: 10));
         emit(AuthState.authenticated(session));
       } else {
         emit(AuthState.failure('Invalid credentials'));
@@ -69,7 +67,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onOrganizationUrlSubmitted(AuthOrganizationUrlSubmitted event, Emitter<AuthState> emit) async {
     emit(AuthState.loading);
     try {
-       Future.delayed( const Duration(seconds: 10)); 
       await _auth.saveOrganizationInviteUrl(event.url);
       emit(AuthState.unauthenticated(hasOrgUrl: true));
     } catch (e) {
