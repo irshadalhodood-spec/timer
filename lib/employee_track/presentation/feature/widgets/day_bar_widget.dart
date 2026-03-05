@@ -38,7 +38,6 @@ class DayBar extends StatelessWidget {
   static const double _gapLabelToBar = 6;
   static const double _gapBarToText = 8;
   static const double _gapBetweenTextLines = 4;
-  static const double _gapBetweenSegments = 2;
   static const double _barRadius = 8;
   static const double _minBarHeight = 4;
 

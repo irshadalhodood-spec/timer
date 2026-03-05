@@ -9,6 +9,8 @@
     "analytics": {
   "work": "العمل",
   "break": "الاستراحة",
+  "check_in": "تسجيل الدخول",
+  "check_out": "تسجيل الخروج",
   "ot": "العمل الإضافي",
   "short": "قصيرة",
   "monthly":"شهريًا",
@@ -35,7 +37,14 @@
   "brk": "إس",
   "st": "قص",
   "device":"الجهاز",
-  "this_week":"هذا الأسبوع"
+  "this_week":"هذا الأسبوع",
+  "detailed_view":"عرض تفصيلي",
+  "calendar_detail":"تقويم الحضور",
+  "tap_day_hint":"اضغط على يوم لرؤية الجدول أدناه",
+  "today":"اليوم",
+  "schedule":"الجدول",
+  "loading_schedule":"جاري تحميل الجدول…",
+  "no_attendance_day":"لا يوجد حضور في هذا اليوم"
 
   }
 }

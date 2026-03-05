@@ -9,6 +9,8 @@
   "analytics": {
   "work": "Work",
   "break": "Break",
+  "check_in": "Check-in",
+  "check_out": "Check-out",
   "ot": "OT",
   "short": "Short",
   "monthly":"Monthly",
@@ -35,7 +37,14 @@
   "brk": "brk",
   "st": "st",
   "device":"Device",
-  "this_week":"This week"
+  "this_week":"This week",
+  "detailed_view":"Detailed View",
+  "calendar_detail":"Attendance Calendar",
+  "tap_day_hint":"Tap a day to see schedule below",
+  "today":"Today",
+  "schedule":"Schedule",
+  "loading_schedule":"Loading schedule…",
+  "no_attendance_day":"No attendance this day"
 
    
 

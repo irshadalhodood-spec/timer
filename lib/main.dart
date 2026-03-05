@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -34,12 +35,16 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = CustomHttpOverrides();
   Bloc.observer = SimpleBlocObserver();
+  // SyncfusionFlutter.init(); 
+
   await appTheme.init();
   await translation.init();
 
   runApp(
     RestartWidget(
-      child: buildAppProviders(child: const EmployeeTrack()),
+      child: DevicePreview(
+        enabled: true,
+        builder: (context) => buildAppProviders(child: const EmployeeTrack())),
     ),
   );
 }
@@ -48,6 +53,7 @@ class EmployeeTrack extends StatefulWidget {
   const EmployeeTrack({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _EmployeeTrackState createState() => _EmployeeTrackState();
 }
 
@@ -57,6 +63,7 @@ class _EmployeeTrackState extends State<EmployeeTrack> {
   @override
   void initState() {
     super.initState();
+    // ignore: deprecated_member_use
     WidgetsBinding.instance.window.onPlatformBrightnessChanged = () {
       if (appTheme.themeType == ThemeType.system) {
         _themeBloc ??= BlocProvider.of<ThemeBloc>(context);
@@ -149,6 +156,7 @@ class RestartWidget extends StatefulWidget {
   }
 
   @override
+  // ignore: library_private_types_in_public_api
   _RestartWidgetState createState() => _RestartWidgetState();
 }
 

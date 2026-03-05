@@ -83,8 +83,8 @@ class AttendanceHistoryCard extends StatelessWidget {
                     color: isPartialLeave
                         ? Colors.orange.withValues(alpha:0.2)
                         : isPresent
-                        ? theme.colorScheme.primaryContainer
-                        : theme.colorScheme.errorContainer.withValues(alpha:0.6),
+                        ? theme.colorScheme.primaryContainer.withValues(alpha:0.3)
+                        : theme.colorScheme.errorContainer,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   alignment: Alignment.center,
@@ -98,7 +98,7 @@ class AttendanceHistoryCard extends StatelessWidget {
                         ? Colors.orange
                         : isPresent
                         ? theme.colorScheme.onPrimaryContainer
-                        : theme.colorScheme.onErrorContainer,
+                        : theme.colorScheme.error,
                     size: 24,
                   ),
                 ),

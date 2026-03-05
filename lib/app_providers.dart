@@ -99,6 +99,7 @@ Widget buildAppProviders({required Widget child}) {
         },
       ),
     ],
+    
     child: MultiBlocProvider(
       providers: [
         BlocProvider<LiveTimeCubit>(lazy: false, create: (_) => LiveTimeCubit()),

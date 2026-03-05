@@ -60,9 +60,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
                   SizedBox(
                     width: 40,
                     height: 40,
-                    child: CupertinoActivityIndicator(
-                     
-                    ),
+                    child: CupertinoActivityIndicator(),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -181,7 +179,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
                         width: 64,
                         height: 64,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildOrgAvatarPlaceholder(context, initial, 64),
+                        errorBuilder: (_, _, _) => _buildOrgAvatarPlaceholder(context, initial, 64),
                       )
                     : _buildOrgAvatarPlaceholder(context, initial, 64),
               ),
@@ -246,7 +244,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withValues(alpha:0.8),
+                          color: colorScheme.primaryContainer.withValues(alpha:0.3),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -417,17 +415,17 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
         borderRadius: BorderRadius.circular(20),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 3),
           decoration: BoxDecoration(
             color: selected
-                ? colorScheme.primaryContainer
+                ? colorScheme.primaryContainer.withValues(alpha:0.3)
                 : colorScheme.surfaceContainerHighest.withValues(alpha:0.8),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: selected
-                  ? colorScheme.primary.withValues(alpha:0.5)
+                  ? colorScheme.onPrimaryContainer.withValues(alpha:0.5)
                   : colorScheme.outline.withValues(alpha:0.15),
-              width: selected ? 1.5 : 1,
+              width: 1
             ),
           ),
           child: Text(
@@ -545,7 +543,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
               CircleAvatar(
                 radius: 24,
                 backgroundImage: e.profilePhotoUrl != null ? NetworkImage(e.profilePhotoUrl!) : null,
-                backgroundColor: theme.colorScheme.primaryContainer,
+                backgroundColor: theme.colorScheme.primaryContainer.withValues(alpha:0.3),
                 child: e.profilePhotoUrl == null
                     ? Text(
                         e.fullName.isNotEmpty ? e.fullName[0].toUpperCase() : '?',

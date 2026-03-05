@@ -27,7 +27,7 @@ void showToast(String message, {Duration? duration}) {
 void showSuccessToast(String message, {Duration? duration}) {
   final context = globalSnackBarKey.currentContext;
   if (context == null) {
-    print('Error: Context is null');
+    debugPrint('Error: Context is null');
     return;
   }
 
@@ -47,7 +47,7 @@ void showErrorToast(String message, {Duration? duration}) {
   final context = globalSnackBarKey.currentContext;
   if (context == null) {
     // Handle error if context is null
-    print('Error: Context is null');
+    debugPrint('Error: Context is null');
     return;
   }
 
@@ -60,7 +60,7 @@ void showErrorToast(String message, {Duration? duration}) {
   );
 }
 
-showBottomSheetPopup(
+void showBottomSheetPopup(
     {required WidgetBuilder builder, required BuildContext context}) {
   showModalBottomSheet(
     isScrollControlled: true,
