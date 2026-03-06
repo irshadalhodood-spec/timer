@@ -72,24 +72,41 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
         userId: userId,
       ),
       child: BlocListener<AttendanceBloc, AttendanceState>(
-        listenWhen: (a, b) =>
-            a is AttendanceStateHistoryLoaded !=
-            b is AttendanceStateHistoryLoaded,
+        listenWhen: (a, b) => true,
         listener: (context, state) {
           if (state is AttendanceStateHistoryLoaded) {
             setState(() => _lastLoadedList = state.list);
           }
+          // After break/checkout actions the bloc emits checkedIn/checkedOut without
+          // going through a history state — re-request history so analytics stays fresh.
+          if (state is AttendanceStateCheckedIn || state is AttendanceStateCheckedOut) {
+            final now = DateTime.now();
+            context.read<AttendanceBloc>().add(
+              AttendanceHistoryRequested(
+                from: now.subtract(const Duration(days: 35)),
+                to: now.add(const Duration(days: 1)),
+              ),
+            );
+          }
         },
         child: BlocBuilder<AttendanceBloc, AttendanceState>(
-          buildWhen: (a, b) =>
-              a is AttendanceStateHistoryLoaded !=
-                  b is AttendanceStateHistoryLoaded ||
-              a is AttendanceStateHistoryLoading !=
-                  b is AttendanceStateHistoryLoading,
+          buildWhen: (a, b) {
+            if (a is AttendanceStateHistoryLoaded != b is AttendanceStateHistoryLoaded) return true;
+            if (a is AttendanceStateHistoryLoading != b is AttendanceStateHistoryLoading) return true;
+            // Rebuild when live break seconds change during an active session.
+            if (b is AttendanceStateCheckedIn && a is AttendanceStateCheckedIn) {
+              return a.breakSeconds != b.breakSeconds || a.breaks.length != b.breaks.length;
+            }
+            if (b is AttendanceStateHistoryLoaded && a is AttendanceStateHistoryLoaded) {
+              return a.todayBreakSeconds != b.todayBreakSeconds || a.list.length != b.list.length;
+            }
+            return false;
+          },
           builder: (context, state) {
-            final list = state is AttendanceStateHistoryLoaded
-                ? state.list
-                : _lastLoadedList;
+            // Patch today's attendance record in the list with live breakSeconds so
+            // graph and history cards reflect real-time break duration.
+            final rawList = state is AttendanceStateHistoryLoaded ? state.list : _lastLoadedList;
+            final list = _withLiveTodayBreaks(rawList, state);
             final isLoading = state is AttendanceStateHistoryLoading;
             final showFullScreenLoading = isLoading && list == null;
 
@@ -733,6 +750,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                           false,
                           false,
                           false,
+                          false,
+                          null,
                         ),
                       ),
                     );
@@ -752,6 +771,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                     isUpcoming,
                     isPartialLeave,
                     isShortHours,
+                    dayIndex,
                   );
                   final tappable = present && !isUpcoming && dayRecords != null && cellSizeOverride == null;
                   return Padding(
@@ -823,34 +843,53 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
         absent++;
       }
     }
-    return Wrap(
-      spacing: 16,
-      runSpacing: 8,
-      children: [
-        _legendChip(
-          theme,
-          translation.of('dashboard.days_present'),
-          present,
-          theme.colorScheme.primary,
-        ),
-        if (partialLeave > 0)
-          _legendChip(
-            theme,
-            translation.of('dashboard.partial_leave'),
-            partialLeave,
-            Colors.orange,
+    final minimalStyle = theme.textTheme.labelSmall?.copyWith(fontSize: 10);
+    Widget minimalChip(String label, int value, Color color) => Padding(
+      padding: const EdgeInsets.only(right: 8, bottom: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-        _legendChip(
-          theme,
-          translation.of('dashboard.days_absent'),
-          absent,
-          theme.colorScheme.error,
-        ),
-        _legendChipWithCross(
-          theme,
-          translation.of('analytics.off_weekend_or_holiday'),
-          offDays,
-        ),
+          const SizedBox(width: 4),
+          LocaleDigitsText('$label: $value', style: minimalStyle),
+        ],
+      ),
+    );
+    Widget minimalChipCross(String label, int value) => Padding(
+      padding: const EdgeInsets.only(right: 8, bottom: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: Icon(Icons.close, size: 6, color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(width: 4),
+          LocaleDigitsText('$label: $value', style: minimalStyle),
+        ],
+      ),
+    );
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: [
+        minimalChip(translation.of('dashboard.days_present'), present, theme.colorScheme.primary),
+        if (partialLeave > 0)
+          minimalChip(translation.of('dashboard.partial_leave'), partialLeave, Colors.orange),
+        minimalChip(translation.of('dashboard.days_absent'), absent, theme.colorScheme.error),
+        minimalChipCross(translation.of('analytics.off_weekend_or_holiday'), offDays),
       ],
     );
   }
@@ -977,6 +1016,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     bool isUpcoming = false,
     bool isPartialLeave = false,
     bool isShortHours = false,
+    int? dayNumber,
   ]) {
     Color color;
     bool showCross = false;
@@ -992,21 +1032,50 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     } else {
       color = theme.colorScheme.error;
     }
+    final textColor = (empty || isUpcoming)
+        ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6)
+        : (present || isOffDay ? theme.colorScheme.onSurface : Colors.white);
     return Container(
       margin: const EdgeInsets.all(0.5),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(2),
       ),
-      child: showCross
-          ? Center(
-              child: Icon(
-                Icons.close,
-                size: 10,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+      child: dayNumber != null
+          ? Stack(
+              alignment: Alignment.center,
+              children: [
+                Center(
+                  child: Text(
+                    LocaleDigits.ofInt(dayNumber),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                if (showCross)
+                  Positioned(
+                    top: 2,
+                    right: 2,
+                    child: Icon(
+                      Icons.close,
+                      size: 8,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
             )
-          : null,
+          : showCross
+              ? Center(
+                  child: Icon(
+                    Icons.close,
+                    size: 10,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                )
+              : null,
     );
   }
 
@@ -1134,6 +1203,37 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     );
   }
 
+ 
+  List<AttendanceEntity>? _withLiveTodayBreaks(
+    List<AttendanceEntity>? list,
+    AttendanceState state,
+  ) {
+    if (list == null) return null;
+
+    AttendanceEntity? liveAttendance;
+    int liveBreakSeconds = 0;
+
+    if (state is AttendanceStateCheckedIn) {
+      liveAttendance = state.attendance;
+      liveBreakSeconds = state.breakSeconds;
+    } else if (state is AttendanceStateHistoryLoaded && state.todayAttendance != null) {
+      liveAttendance = state.todayAttendance;
+      liveBreakSeconds = state.todayBreakSeconds;
+    } else if (state is AttendanceStateHistoryLoading && state.todayAttendance != null) {
+      liveAttendance = state.todayAttendance;
+      liveBreakSeconds = state.todayBreakSeconds;
+    }
+
+    if (liveAttendance == null) return list;
+
+    return list.map((a) {
+      if (a.id == liveAttendance!.id) {
+        return a.copyWith(breakSeconds: liveBreakSeconds);
+      }
+      return a;
+    }).toList();
+  }
+
   static DateTime _checkInLocal(AttendanceEntity a) {
     return a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
   }
@@ -1149,8 +1249,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     return endOfCheckInDay;
   }
 
-  /// Worked seconds for this session limited to the given calendar day (single-day only).
-  /// [now] When set, open sessions (no checkout) are capped to this time so we don't count future time.
+ 
   static int _workedSecondsForDay(AttendanceEntity a, DateTime dateLocal, {DateTime? now}) {
     final checkInLocal = _checkInLocal(a);
     final startOfDay = DateTime(dateLocal.year, dateLocal.month, dateLocal.day);

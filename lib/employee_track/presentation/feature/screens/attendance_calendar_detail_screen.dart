@@ -12,6 +12,7 @@ import '../../../domain/repositories/break_record_repository.dart';
 import '../../../../../base_module/presentation/core/values/app_constants.dart';
 import '../../../../../base_module/presentation/util/date_time_format.dart';
 import '../../../../../base_module/presentation/util/locale_digits.dart';
+import '../models/attendance_calander_models.dart';
 
 class AttendanceCalendarDetailScreen extends StatefulWidget {
   const AttendanceCalendarDetailScreen({
@@ -41,8 +42,8 @@ class _AttendanceCalendarDetailScreenState
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
 
-  static const double _minCellSize = 56;
-  static const double _maxCellSize = 72;
+  static const double _minCellSize = 46;
+  static const double _maxCellSize = 62;
   static const int _dayViewStartHour = 0;
   static const int _dayViewEndHour = 24;
   /// Fixed height per hour row (gap between 1pm, 2pm, etc.). Larger = taller card and more spacing.
@@ -229,10 +230,7 @@ class _AttendanceCalendarDetailScreenState
       child: Stack(
         alignment: Alignment.center,
         children: [
-           if (showCross) ...[
-                   
-                    Center(child: Icon(Icons.clear_rounded, size: 60, color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2))),
-                  ],
+          
           Container(
             margin: const EdgeInsets.all(2),
             decoration: BoxDecoration(
@@ -253,6 +251,10 @@ class _AttendanceCalendarDetailScreenState
               ),
             ),
           ),
+           if (showCross) ...[
+                   
+                    Center(child: Icon(Icons.clear_rounded, size: 45, color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3))),
+                  ],
         ],
       ),
     );
@@ -299,35 +301,35 @@ class _AttendanceCalendarDetailScreenState
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                    child: Row(
-                      children: [
-                        if (!isSelectedToday)
-                          TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _selectedDay = today;
-                                _focusedDay = now;
-                              });
-                            },
-                            icon: Icon(
-                              Icons.today_outlined,
-                              size: 18,
-                              color: theme.colorScheme.primary,
-                            ),
-                            label: Text(
-                              translation.of('analytics.today'),
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        const Spacer(),
-                      ],
-                    ),
-                  ),
+                  // Padding(
+                  //   padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                  //   child: Row(
+                  //     children: [
+                  //       if (!isSelectedToday)
+                  //         TextButton.icon(
+                  //           onPressed: () {
+                  //             setState(() {
+                  //               _selectedDay = today;
+                  //               _focusedDay = now;
+                  //             });
+                  //           },
+                  //           icon: Icon(
+                  //             Icons.today_outlined,
+                  //             size: 18,
+                  //             color: theme.colorScheme.primary,
+                  //           ),
+                  //           label: Text(
+                  //             translation.of('analytics.today'),
+                  //             style: theme.textTheme.labelLarge?.copyWith(
+                  //               color: theme.colorScheme.primary,
+                  //               fontWeight: FontWeight.w600,
+                  //             ),
+                  //           ),
+                  //         ),
+                  //       const Spacer(),
+                  //     ],
+                  //   ),
+                  // ),
                   LayoutBuilder(
                 builder: (context, constraints) {
                   final cellSize = (constraints.maxWidth / 7)
@@ -492,7 +494,7 @@ class _AttendanceCalendarDetailScreenState
     return DateFormat('h:mm a', locale).format(d);
   }
 
-  Future<_DayViewData> _getTimeBlocksWithExactBreaks(
+  Future<DayViewData> _getTimeBlocksWithExactBreaks(
     DateTime day,
     List<AttendanceEntity> records,
     BreakRecordRepository breakRepo,
@@ -504,8 +506,8 @@ class _AttendanceCalendarDetailScreenState
     final now = DateTime.now();
     final sorted = List<AttendanceEntity>.from(records)
       ..sort((a, b) => a.checkInAt.compareTo(b.checkInAt));
-    final blocks = <_TimeBlock>[];
-    final details = <_DayDetailEntry>[];
+    final blocks = <TimeBlock>[];
+    final details = <DayDetailEntry>[];
 
     for (final a in sorted) {
       final checkIn = _checkInLocal(a);
@@ -516,8 +518,8 @@ class _AttendanceCalendarDetailScreenState
       final sessionStart = checkIn.isBefore(dayStart) ? dayStart : checkIn;
       final sessionEnd = checkOut.isAfter(dayEnd) ? dayEnd : checkOut;
 
-      details.add(_DayDetailEntry(
-        type: _DayDetailType.checkIn,
+      details.add(DayDetailEntry(
+        type: DayDetailType.checkIn,
         timeLabel: _formatTimeExact(checkIn),
         location: a.checkInAddress,
       ));
@@ -534,15 +536,15 @@ class _AttendanceCalendarDetailScreenState
       breaksWithTimes.sort((x, y) => x.$1.compareTo(y.$1));
 
       for (final (bStart, bEnd, b) in breaksWithTimes) {
-        details.add(_DayDetailEntry(
-          type: _DayDetailType.breakType,
+        details.add(DayDetailEntry(
+          type: DayDetailType.breakType,
           timeLabel: '${_formatTimeExact(bStart)} – ${_formatTimeExact(bEnd)}',
           location: b.startAddress ?? b.endAddress,
         ));
       }
 
-      details.add(_DayDetailEntry(
-        type: _DayDetailType.checkOut,
+      details.add(DayDetailEntry(
+        type: DayDetailType.checkOut,
         timeLabel: _formatTimeExact(checkOut),
         location: a.checkOutAddress,
       ));
@@ -589,7 +591,7 @@ class _AttendanceCalendarDetailScreenState
           if (isLastSegment && segMins <= workMins) {
             workDetail = workDetail != null ? '$workDetail\n$checkOutStr' : checkOutStr;
           }
-          blocks.add(_TimeBlock(
+          blocks.add(TimeBlock(
             label: translation.of('analytics.work'),
             startSeconds: startSeconds,
             durationSeconds: workMins * 60,
@@ -600,7 +602,7 @@ class _AttendanceCalendarDetailScreenState
           workedSoFar += workMins;
           segMins -= workMins;
           if (segMins > 0) {
-            blocks.add(_TimeBlock(
+            blocks.add(TimeBlock(
               label: translation.of('analytics.ot'),
               startSeconds: startSeconds + (workMins * 60),
               durationSeconds: segMins * 60,
@@ -610,7 +612,7 @@ class _AttendanceCalendarDetailScreenState
             workBlockCount++;
           }
         } else {
-          blocks.add(_TimeBlock(
+          blocks.add(TimeBlock(
             label: translation.of('analytics.ot'),
             startSeconds: startSeconds,
             durationSeconds: segMins * 60,
@@ -631,7 +633,7 @@ class _AttendanceCalendarDetailScreenState
         if (durationSeconds <= 0) continue;
         final timeRange = '${_formatTimeExact(bStart)} – ${_formatTimeExact(bEnd)}';
         final breakDetail = _detailStr(timeRange, b.startAddress ?? b.endAddress);
-        blocks.add(_TimeBlock(
+        blocks.add(TimeBlock(
           label: translation.of('analytics.break'),
           startSeconds: start.difference(dayStart).inSeconds,
           durationSeconds: durationSeconds,
@@ -642,7 +644,7 @@ class _AttendanceCalendarDetailScreenState
     }
 
     blocks.sort((a, b) => a.startSeconds.compareTo(b.startSeconds));
-    return _DayViewData(blocks: blocks, details: details);
+    return DayViewData(blocks: blocks, details: details);
   }
 
   Widget _buildHourlyDayView(ThemeData theme, DateTime day) {
@@ -690,7 +692,7 @@ class _AttendanceCalendarDetailScreenState
 
     final breakRepo = context.read<BreakRecordRepository>();
 
-    return FutureBuilder<_DayViewData>(
+    return FutureBuilder<DayViewData>(
       future: _getTimeBlocksWithExactBreaks(dayKey, records, breakRepo),
       builder: (context, snapshot) {
         final data = snapshot.data;
@@ -858,7 +860,7 @@ class _AttendanceCalendarDetailScreenState
                                   Padding(
                                     padding: const EdgeInsets.only(top: 2),
                                     child: Text(
-                                      b.detailText!,
+                                      b.detailText??'',
                                       style: theme.textTheme.labelSmall?.copyWith(
                                         color: Colors.white.withValues(alpha: 0.95),
                                         fontSize: 9,
@@ -964,43 +966,3 @@ class _AttendanceCalendarDetailScreenState
   }
 }
 
-class _TimeBlock {
-  _TimeBlock({
-    required this.label,
-    required this.startSeconds,
-    required this.durationSeconds,
-    this.isWork = false,
-    this.isBreak = false,
-    this.isOt = false,
-    this.detailText,
-  });
-  final String label;
-  /// Start offset from midnight in seconds (exact, no rounding).
-  final int startSeconds;
-  /// Duration in seconds (exact, so e.g. 2:44 is correct not 2:00).
-  final int durationSeconds;
-  final bool isWork;
-  final bool isBreak;
-  final bool isOt;
-  /// Time and location shown on the block (e.g. check-in, check-out, break details).
-  final String? detailText;
-}
-
-enum _DayDetailType { checkIn, checkOut, breakType }
-
-class _DayDetailEntry {
-  _DayDetailEntry({
-    required this.type,
-    required this.timeLabel,
-    this.location,
-  });
-  final _DayDetailType type;
-  final String timeLabel;
-  final String? location;
-}
-
-class _DayViewData {
-  _DayViewData({required this.blocks, required this.details});
-  final List<_TimeBlock> blocks;
-  final List<_DayDetailEntry> details;
-}
