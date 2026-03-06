@@ -44,7 +44,14 @@
   "today":"Today",
   "schedule":"Schedule",
   "loading_schedule":"Loading schedule…",
-  "no_attendance_day":"No attendance this day"
+  "no_attendance_day":"No attendance this day",
+  "month":"Month",
+  "2_weeks":"2 Weeks",
+  "week":"Week",
+  "pm":"PM",
+  "am":"AM",
+  "12_am":"12 AM",
+  "12_pm":"12 PM"
 
    
 

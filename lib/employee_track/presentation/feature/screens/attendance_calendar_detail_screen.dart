@@ -46,6 +46,7 @@ class _AttendanceCalendarDetailScreenState
   static const double _maxCellSize = 62;
   static const int _dayViewStartHour = 0;
   static const int _dayViewEndHour = 24;
+
   /// Fixed height per hour row (gap between 1pm, 2pm, etc.). Larger = taller card and more spacing.
   static const double _hourRowHeight = 80;
 
@@ -65,10 +66,14 @@ class _AttendanceCalendarDetailScreenState
     if (list.isNotEmpty) {
       final byDate = <DateTime, List<AttendanceEntity>>{};
       for (final a in list) {
-        final checkInLocal =
-            a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
+        final checkInLocal = a.checkInAt.isUtc
+            ? a.checkInAt.toLocal()
+            : a.checkInAt;
         final d = DateTime(
-            checkInLocal.year, checkInLocal.month, checkInLocal.day);
+          checkInLocal.year,
+          checkInLocal.month,
+          checkInLocal.day,
+        );
         presentDates.add(d);
         byDate.putIfAbsent(d, () => []).add(a);
         calendarByDate.putIfAbsent(d, () => []).add(a);
@@ -101,11 +106,6 @@ class _AttendanceCalendarDetailScreenState
     _calendarByDate = calendarByDate;
   }
 
-  String _shortDow(int weekday) {
-    const en = ['', 'M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    return weekday >= 1 && weekday <= 7 ? en[weekday] : '';
-  }
-
   bool _isOffDay(DateTime d) {
     final weekend = widget.weekendWeekdays ?? [6, 7];
     final holidays = widget.holidays ?? [];
@@ -119,13 +119,14 @@ class _AttendanceCalendarDetailScreenState
 
   static DateTime _effectiveCheckOut(AttendanceEntity a, {DateTime? now}) {
     if (a.checkOutAt != null) {
-      return a.checkOutAt!.isUtc
-          ? a.checkOutAt!.toLocal()
-          : a.checkOutAt!;
+      return a.checkOutAt!.isUtc ? a.checkOutAt!.toLocal() : a.checkOutAt!;
     }
     final checkInLocal = _checkInLocal(a);
-    final startOfDay =
-        DateTime(checkInLocal.year, checkInLocal.month, checkInLocal.day);
+    final startOfDay = DateTime(
+      checkInLocal.year,
+      checkInLocal.month,
+      checkInLocal.day,
+    );
     final endOfCheckInDay = startOfDay.add(const Duration(days: 1));
     if (now != null) {
       return now.isBefore(endOfCheckInDay) ? now : endOfCheckInDay;
@@ -134,19 +135,20 @@ class _AttendanceCalendarDetailScreenState
   }
 
   static int _workedSecondsForDay(
-      AttendanceEntity a, DateTime dateLocal, {DateTime? now}) {
+    AttendanceEntity a,
+    DateTime dateLocal, {
+    DateTime? now,
+  }) {
     final checkInLocal = _checkInLocal(a);
-    final startOfDay =
-        DateTime(dateLocal.year, dateLocal.month, dateLocal.day);
+    final startOfDay = DateTime(dateLocal.year, dateLocal.month, dateLocal.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     final endAt = a.checkOutAt != null
         ? _effectiveCheckOut(a)
-        : (now != null
-            ? (now.isBefore(endOfDay) ? now : endOfDay)
-            : endOfDay);
+        : (now != null ? (now.isBefore(endOfDay) ? now : endOfDay) : endOfDay);
     final endAtCapped = endAt.isAfter(endOfDay) ? endOfDay : endAt;
-    final effectiveStart =
-        checkInLocal.isBefore(startOfDay) ? startOfDay : checkInLocal;
+    final effectiveStart = checkInLocal.isBefore(startOfDay)
+        ? startOfDay
+        : checkInLocal;
     if (!endAtCapped.isAfter(effectiveStart)) return 0;
     final seconds =
         endAtCapped.difference(effectiveStart).inSeconds - a.breakSeconds;
@@ -218,11 +220,16 @@ class _AttendanceCalendarDetailScreenState
     final isShortHours = _shortHoursDates.contains(d);
 
     final gradient = _gradientForDay(
-      isUpcoming, present, offDay, isPartialLeave, isShortHours, theme.colorScheme,
+      isUpcoming,
+      present,
+      offDay,
+      isPartialLeave,
+      isShortHours,
+      theme.colorScheme,
     );
-    final textColor = (isUpcoming || offDay)
-        ? theme.colorScheme.onSurfaceVariant
-        : Colors.white;
+    final textColor = isUpcoming
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.15)
+        : (offDay ? theme.colorScheme.onSurfaceVariant : Colors.white);
     final showCross = offDay;
 
     return AspectRatio(
@@ -230,7 +237,6 @@ class _AttendanceCalendarDetailScreenState
       child: Stack(
         alignment: Alignment.center,
         children: [
-          
           Container(
             margin: const EdgeInsets.all(2),
             decoration: BoxDecoration(
@@ -251,10 +257,17 @@ class _AttendanceCalendarDetailScreenState
               ),
             ),
           ),
-           if (showCross) ...[
-                   
-                    Center(child: Icon(Icons.clear_rounded, size: 45, color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3))),
-                  ],
+          if (showCross) ...[
+            Center(
+              child: Icon(
+                Icons.clear_rounded,
+                size: 45,
+                color: Theme.of(
+                  context,
+                ).colorScheme.error.withValues(alpha: 0.3),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -268,15 +281,14 @@ class _AttendanceCalendarDetailScreenState
     final lastDay = DateTime(now.year + 1, 12, 31);
 
     final today = DateTime(now.year, now.month, now.day);
-    final isSelectedToday = _selectedDay != null &&
+    final isSelectedToday =
+        _selectedDay != null &&
         _selectedDay!.year == today.year &&
         _selectedDay!.month == today.month &&
         _selectedDay!.day == today.day;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(translation.of('analytics.calendar_detail')),
-      ),
+      appBar: AppBar(title: Text(translation.of('analytics.calendar_detail'))),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
@@ -331,116 +343,147 @@ class _AttendanceCalendarDetailScreenState
                   //   ),
                   // ),
                   LayoutBuilder(
-                builder: (context, constraints) {
-                  final cellSize = (constraints.maxWidth / 7)
-                      .clamp(_minCellSize, _maxCellSize);
-                  final gridWidth = cellSize * 7;
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: gridWidth,
-                      child: TableCalendar(
-                        firstDay: firstDay,
-                        lastDay: lastDay,
-                        focusedDay: _focusedDay,
-                        selectedDayPredicate: (day) =>
-                            _selectedDay != null &&
-                            _selectedDay!.year == day.year &&
-                            _selectedDay!.month == day.month &&
-                            _selectedDay!.day == day.day,
-                        onDaySelected: (selected, focused) {
-                          setState(() {
-                            _selectedDay = selected;
-                            _focusedDay = focused;
-                          });
-                        },
-                        calendarFormat: _calendarFormat,
-                        startingDayOfWeek: StartingDayOfWeek.monday,
-                        availableCalendarFormats: const {
-                          CalendarFormat.month: 'Month',
-                          CalendarFormat.twoWeeks: '2 weeks',
-                          CalendarFormat.week: 'Week',
-                        },
-                        onFormatChanged: (format) {
-                          setState(() => _calendarFormat = format);
-                        },
-                        onPageChanged: (focusedDay) {
-                          setState(() => _focusedDay = focusedDay);
-                        },
-                        calendarBuilders: CalendarBuilders(
-                          defaultBuilder: (context, day, focusedDay) =>
-                              _buildDayCell(context, day, focusedDay, theme),
-                          todayBuilder: (context, day, focusedDay) =>
-                              _buildDayCell(context, day, focusedDay, theme),
-                          outsideBuilder: (context, day, focusedDay) =>
-                              _buildDayCell(context, day, focusedDay, theme),
-                          dowBuilder: (context, day) => Center(
-                            child: Text(
-                              _shortDow(day.weekday),
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurfaceVariant,
+                    builder: (context, constraints) {
+                      final cellSize = (constraints.maxWidth / 7).clamp(
+                        _minCellSize,
+                        _maxCellSize,
+                      );
+                      final gridWidth = cellSize * 7;
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SizedBox(
+                          width: gridWidth,
+                          child: TableCalendar(
+                            locale: translation.selectedLocale?.languageCode,
+                            firstDay: firstDay,
+                            lastDay: lastDay,
+                            focusedDay: _focusedDay,
+                            selectedDayPredicate: (day) =>
+                                _selectedDay != null &&
+                                _selectedDay!.year == day.year &&
+                                _selectedDay!.month == day.month &&
+                                _selectedDay!.day == day.day,
+                            onDaySelected: (selected, focused) {
+                              setState(() {
+                                _selectedDay = selected;
+                                _focusedDay = focused;
+                              });
+                            },
+                            calendarFormat: _calendarFormat,
+                            startingDayOfWeek: StartingDayOfWeek.monday,
+                            availableCalendarFormats: {
+                              CalendarFormat.month: translation.of(
+                                'analytics.month',
+                              ),
+                              CalendarFormat.twoWeeks: translation.of(
+                                'analytics.2_weeks',
+                              ),
+                              CalendarFormat.week: translation.of(
+                                'analytics.week',
+                              ),
+                            },
+                            onFormatChanged: (format) {
+                              setState(() => _calendarFormat = format);
+                            },
+                            onPageChanged: (focusedDay) {
+                              setState(() => _focusedDay = focusedDay);
+                            },
+                            calendarBuilders: CalendarBuilders(
+                              defaultBuilder: (context, day, focusedDay) =>
+                                  _buildDayCell(
+                                    context,
+                                    day,
+                                    focusedDay,
+                                    theme,
+                                  ),
+                              todayBuilder: (context, day, focusedDay) =>
+                                  _buildDayCell(
+                                    context,
+                                    day,
+                                    focusedDay,
+                                    theme,
+                                  ),
+                              outsideBuilder: (context, day, focusedDay) =>
+                                  _buildDayCell(
+                                    context,
+                                    day,
+                                    focusedDay,
+                                    theme,
+                                  ),
+                            ),
+                            calendarStyle: CalendarStyle(
+                              cellMargin: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                                vertical: 2,
+                              ),
+                              defaultTextStyle: theme.textTheme.bodySmall!,
+                              weekendTextStyle: theme.textTheme.bodySmall!,
+                              outsideDaysVisible: true,
+
+                              todayDecoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer
+                                    .withValues(alpha: 0.6),
+                                shape: BoxShape.rectangle,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              selectedDecoration: BoxDecoration(
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.3,
+                                ),
+                                shape: BoxShape.rectangle,
+
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              markerDecoration: BoxDecoration(
+                                color: theme.colorScheme.primary,
+                                shape: BoxShape.circle,
                               ),
                             ),
+                            headerStyle: HeaderStyle(
+                              formatButtonVisible: true,
+                              titleCentered: true,
+                              leftChevronIcon: Icon(
+                                Icons.chevron_left,
+                                color: theme.colorScheme.onSurface,
+                                size: 28,
+                              ),
+                              rightChevronIcon: Icon(
+                                Icons.chevron_right,
+                                color: theme.colorScheme.onSurface,
+                                size: 28,
+                              ),
+                              headerMargin: const EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
+                              titleTextStyle:
+                                  (theme.textTheme.titleMedium ??
+                                          const TextStyle())
+                                      .copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                              formatButtonDecoration: BoxDecoration(
+                                border: Border.all(
+                                  color: theme.colorScheme.outline.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              formatButtonTextStyle:
+                                  (theme.textTheme.labelLarge ??
+                                          const TextStyle())
+                                      .copyWith(
+                                        color: theme.colorScheme.primary,
+                                      ),
+                            ),
+                            daysOfWeekHeight: 36,
+                            rowHeight: 52,
                           ),
                         ),
-                        calendarStyle: CalendarStyle(
-                          cellMargin: const EdgeInsets.symmetric(
-                              horizontal: 2, vertical: 2),
-                          defaultTextStyle: theme.textTheme.bodySmall!,
-                          weekendTextStyle: theme.textTheme.bodySmall!,
-                          outsideDaysVisible: true,
-
-                          todayDecoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer
-                                .withValues(alpha: 0.6),
-                            shape: BoxShape.rectangle,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          selectedDecoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                            shape: BoxShape.rectangle,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          markerDecoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        headerStyle: HeaderStyle(
-                          formatButtonVisible: true,
-                          titleCentered: true,
-                          leftChevronIcon: Icon(
-                            Icons.chevron_left,
-                            color: theme.colorScheme.onSurface,
-                            size: 28,
-                          ),
-                          rightChevronIcon: Icon(
-                            Icons.chevron_right,
-                            color: theme.colorScheme.onSurface,
-                            size: 28,
-                          ),
-                          headerMargin: const EdgeInsets.symmetric(vertical: 12),
-                          titleTextStyle: (theme.textTheme.titleMedium ?? const TextStyle()).copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                          formatButtonDecoration: BoxDecoration(
-                            border: Border.all(
-                                color: theme.colorScheme.outline.withValues(alpha: 0.5)),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          formatButtonTextStyle: (theme.textTheme.labelLarge ?? const TextStyle()).copyWith(
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        daysOfWeekHeight: 36,
-                        rowHeight: 52,
-                      ),
-                    ),
-                  );
-                },
-              ),
+                      );
+                    },
+                  ),
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -477,10 +520,10 @@ class _AttendanceCalendarDetailScreenState
   }
 
   String _hourLabel(int hour) {
-    if (hour == 0) return '12 AM';
-    if (hour == 12) return '12 PM';
-    if (hour < 12) return '$hour AM';
-    return '${hour - 12} PM';
+    if (hour == 0) return translation.of('analytics.12_am');
+    if (hour == 12) return translation.of('analytics.12_pm');
+    if (hour < 12) return '$hour ${translation.of('analytics.am')}';
+    return '${hour - 12} ${translation.of('analytics.pm')}';
   }
 
   static DateTime _toLocal(DateTime? d) {
@@ -488,7 +531,6 @@ class _AttendanceCalendarDetailScreenState
     return d.isUtc ? d.toLocal() : d;
   }
 
-  /// Time with minutes always visible (e.g. "1:37 PM", "2:44 PM") for timeline accuracy.
   static String _formatTimeExact(DateTime d) {
     final locale = translation.selectedLocale?.languageCode ?? 'en';
     return DateFormat('h:mm a', locale).format(d);
@@ -499,9 +541,16 @@ class _AttendanceCalendarDetailScreenState
     List<AttendanceEntity> records,
     BreakRecordRepository breakRepo,
   ) async {
-    // Use local date only so timeline positions match displayed times (e.g. 9:05 not 8:30).
     final localDay = day.isUtc ? day.toLocal() : day;
-    final dayStart = DateTime(localDay.year, localDay.month, localDay.day, 0, 0, 0, 0);
+    final dayStart = DateTime(
+      localDay.year,
+      localDay.month,
+      localDay.day,
+      0,
+      0,
+      0,
+      0,
+    );
     final dayEnd = dayStart.add(const Duration(days: 1));
     final now = DateTime.now();
     final sorted = List<AttendanceEntity>.from(records)
@@ -518,11 +567,13 @@ class _AttendanceCalendarDetailScreenState
       final sessionStart = checkIn.isBefore(dayStart) ? dayStart : checkIn;
       final sessionEnd = checkOut.isAfter(dayEnd) ? dayEnd : checkOut;
 
-      details.add(DayDetailEntry(
-        type: DayDetailType.checkIn,
-        timeLabel: _formatTimeExact(checkIn),
-        location: a.checkInAddress,
-      ));
+      details.add(
+        DayDetailEntry(
+          type: DayDetailType.checkIn,
+          timeLabel: _formatTimeExact(checkIn),
+          location: a.checkInAddress,
+        ),
+      );
 
       final breakList = await breakRepo.getByAttendanceId(a.id);
       final breaksWithTimes = <(DateTime, DateTime, BreakRecordEntity)>[];
@@ -536,25 +587,37 @@ class _AttendanceCalendarDetailScreenState
       breaksWithTimes.sort((x, y) => x.$1.compareTo(y.$1));
 
       for (final (bStart, bEnd, b) in breaksWithTimes) {
-        details.add(DayDetailEntry(
-          type: DayDetailType.breakType,
-          timeLabel: '${_formatTimeExact(bStart)} – ${_formatTimeExact(bEnd)}',
-          location: b.startAddress ?? b.endAddress,
-        ));
+        details.add(
+          DayDetailEntry(
+            type: DayDetailType.breakType,
+            timeLabel:
+                '${_formatTimeExact(bStart)} – ${_formatTimeExact(bEnd)}',
+            location: b.startAddress ?? b.endAddress,
+          ),
+        );
       }
 
-      details.add(DayDetailEntry(
-        type: DayDetailType.checkOut,
-        timeLabel: _formatTimeExact(checkOut),
-        location: a.checkOutAddress,
-      ));
+      details.add(
+        DayDetailEntry(
+          type: DayDetailType.checkOut,
+          timeLabel: _formatTimeExact(checkOut),
+          location: a.checkOutAddress,
+        ),
+      );
 
       String _detailStr(String time, String? loc) {
         if (loc != null && loc.trim().isNotEmpty) return '$time · $loc';
         return time;
       }
-      final checkInStr = _detailStr(_formatTimeExact(checkIn), a.checkInAddress);
-      final checkOutStr = _detailStr(_formatTimeExact(checkOut), a.checkOutAddress);
+
+      final checkInStr = _detailStr(
+        _formatTimeExact(checkIn),
+        a.checkInAddress,
+      );
+      final checkOutStr = _detailStr(
+        _formatTimeExact(checkOut),
+        a.checkOutAddress,
+      );
 
       final breaks = breaksWithTimes.map((t) => (t.$1, t.$2)).toList();
       final workStarts = <DateTime>[];
@@ -586,39 +649,49 @@ class _AttendanceCalendarDetailScreenState
         final remainingNormal = normalWorkCap - workedSoFar;
         final isLastSegment = i == workStarts.length - 1;
         if (remainingNormal > 0) {
-          final workMins = segMins > remainingNormal ? remainingNormal : segMins;
+          final workMins = segMins > remainingNormal
+              ? remainingNormal
+              : segMins;
           String? workDetail = workBlockCount == 0 ? checkInStr : null;
           if (isLastSegment && segMins <= workMins) {
-            workDetail = workDetail != null ? '$workDetail\n$checkOutStr' : checkOutStr;
+            workDetail = workDetail != null
+                ? '$workDetail\n$checkOutStr'
+                : checkOutStr;
           }
-          blocks.add(TimeBlock(
-            label: translation.of('analytics.work'),
-            startSeconds: startSeconds,
-            durationSeconds: workMins * 60,
-            isWork: true,
-            detailText: workDetail,
-          ));
+          blocks.add(
+            TimeBlock(
+              label: translation.of('analytics.work'),
+              startSeconds: startSeconds,
+              durationSeconds: workMins * 60,
+              isWork: true,
+              detailText: workDetail,
+            ),
+          );
           workBlockCount++;
           workedSoFar += workMins;
           segMins -= workMins;
           if (segMins > 0) {
-            blocks.add(TimeBlock(
-              label: translation.of('analytics.ot'),
-              startSeconds: startSeconds + (workMins * 60),
-              durationSeconds: segMins * 60,
-              isOt: true,
-              detailText: isLastSegment ? checkOutStr : null,
-            ));
+            blocks.add(
+              TimeBlock(
+                label: translation.of('analytics.ot'),
+                startSeconds: startSeconds + (workMins * 60),
+                durationSeconds: segMins * 60,
+                isOt: true,
+                detailText: isLastSegment ? checkOutStr : null,
+              ),
+            );
             workBlockCount++;
           }
         } else {
-          blocks.add(TimeBlock(
-            label: translation.of('analytics.ot'),
-            startSeconds: startSeconds,
-            durationSeconds: segMins * 60,
-            isOt: true,
-            detailText: isLastSegment ? checkOutStr : null,
-          ));
+          blocks.add(
+            TimeBlock(
+              label: translation.of('analytics.ot'),
+              startSeconds: startSeconds,
+              durationSeconds: segMins * 60,
+              isOt: true,
+              detailText: isLastSegment ? checkOutStr : null,
+            ),
+          );
           workBlockCount++;
         }
       }
@@ -631,15 +704,21 @@ class _AttendanceCalendarDetailScreenState
         final end = bEnd.isAfter(dayEnd) ? dayEnd : bEnd;
         final durationSeconds = end.difference(start).inSeconds;
         if (durationSeconds <= 0) continue;
-        final timeRange = '${_formatTimeExact(bStart)} – ${_formatTimeExact(bEnd)}';
-        final breakDetail = _detailStr(timeRange, b.startAddress ?? b.endAddress);
-        blocks.add(TimeBlock(
-          label: translation.of('analytics.break'),
-          startSeconds: start.difference(dayStart).inSeconds,
-          durationSeconds: durationSeconds,
-          isBreak: true,
-          detailText: breakDetail,
-        ));
+        final timeRange =
+            '${_formatTimeExact(bStart)}  ${_formatTimeExact(bEnd)}';
+        final breakDetail = _detailStr(
+          timeRange,
+          b.startAddress ?? b.endAddress,
+        );
+        blocks.add(
+          TimeBlock(
+            label: translation.of('analytics.break'),
+            startSeconds: start.difference(dayStart).inSeconds,
+            durationSeconds: durationSeconds,
+            isBreak: true,
+            detailText: breakDetail,
+          ),
+        );
       }
     }
 
@@ -697,7 +776,8 @@ class _AttendanceCalendarDetailScreenState
       builder: (context, snapshot) {
         final data = snapshot.data;
         final blocks = data?.blocks ?? [];
-        if (snapshot.connectionState == ConnectionState.waiting && data == null) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            data == null) {
           return Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -786,7 +866,7 @@ class _AttendanceCalendarDetailScreenState
                           child: Align(
                             alignment: Alignment.centerRight,
                             child: Text(
-                              _hourLabel(hour),
+                              LocaleDigits.format(_hourLabel(hour)),
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontSize: 10,
@@ -804,87 +884,114 @@ class _AttendanceCalendarDetailScreenState
                       height: totalHeight,
                       child: Stack(
                         children: [
-                          ...List.generate(hourCount - 1, (i) => Positioned(
-                            left: 0,
-                            right: 0,
-                            top: (i + 1) * _hourRowHeight - 1,
-                            height: 1,
-                            child: Container(color: theme.colorScheme.outline.withValues(alpha: 0.15)),
-                          )),
-                          ...blocks.map((b) {
-                        final top = (b.startSeconds / totalSeconds) * totalHeight+40;
-                        final height = (b.durationSeconds / totalSeconds) * totalHeight;
-                        final hasDetail = b.detailText != null && b.detailText!.trim().isNotEmpty;
-                        const minBlockNoDetail = 36.0;
-                        const minBlockWithDetail = 56.0;
-                        final blockHeight = height < (hasDetail ? minBlockWithDetail : minBlockNoDetail) && b.durationSeconds > 0
-                            ? (hasDetail ? minBlockWithDetail : minBlockNoDetail)
-                            : height;
-                        Color bg;
-                        if (b.isBreak) {
-                          bg = Colors.orange;
-                        } else if (b.isOt) {
-                          bg = theme.colorScheme.tertiary;
-                        } else {
-                          bg = theme.colorScheme.primary;
-                        }
-                        return Positioned(
-                          left: 0,
-                          right: 0,
-                          top: top,
-                          height: blockHeight,
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 4),
-                            decoration: BoxDecoration(
-                              color: bg,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            alignment: Alignment.centerLeft,
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  b.label,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 10,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                          ...List.generate(
+                            hourCount - 1,
+                            (i) => Positioned(
+                              left: 0,
+                              right: 0,
+                              top: (i + 1) * _hourRowHeight - 1,
+                              height: 1,
+                              child: Container(
+                                color: theme.colorScheme.outline.withValues(
+                                  alpha: 0.15,
                                 ),
-                                if (hasDetail)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 2),
-                                    child: Text(
-                                      b.detailText??'',
-                                      style: theme.textTheme.labelSmall?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.95),
-                                        fontSize: 9,
-                                        height: 1.2,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                              ],
+                              ),
                             ),
                           ),
-                        );
-                      }),
-                    ],
+                          ...blocks.map((b) {
+                            final top =
+                                (b.startSeconds / totalSeconds) * totalHeight +
+                                40;
+                            final height =
+                                (b.durationSeconds / totalSeconds) *
+                                totalHeight;
+                            final hasDetail =
+                                b.detailText != null &&
+                                b.detailText!.trim().isNotEmpty;
+                            const minBlockNoDetail = 36.0;
+                            const minBlockWithDetail = 56.0;
+                            final blockHeight =
+                                height <
+                                        (hasDetail
+                                            ? minBlockWithDetail
+                                            : minBlockNoDetail) &&
+                                    b.durationSeconds > 0
+                                ? (hasDetail
+                                      ? minBlockWithDetail
+                                      : minBlockNoDetail)
+                                : height;
+                            Color bg;
+                            if (b.isBreak) {
+                              bg = Colors.orange;
+                            } else if (b.isOt) {
+                              bg = theme.colorScheme.tertiary;
+                            } else {
+                              bg = theme.colorScheme.primary;
+                            }
+                            return Positioned(
+                              left: 0,
+                              right: 0,
+                              top: top,
+                              height: blockHeight,
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 4),
+                                decoration: BoxDecoration(
+                                  color: bg,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                alignment: Alignment.centerLeft,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      b.label,
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 10,
+                                          ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                    if (hasDetail)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Text(
+                                          b.detailText ?? '',
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.95,
+                                                ),
+                                                fontSize: 9,
+                                                height: 1.2,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
                 ],
               ),
             ],
           ),
-      );
+        );
       },
     );
   }
@@ -894,30 +1001,30 @@ class _AttendanceCalendarDetailScreenState
       spacing: 16,
       runSpacing: 10,
       children: [
-            _legendChip(
-              theme,
-              translation.of('dashboard.days_present'),
-              _presentDates.length,
-              theme.colorScheme.primary,
-            ),
-            if (_partialLeaveDates.isNotEmpty || _shortHoursDates.isNotEmpty)
-              _legendChip(
-                theme,
-                translation.of('dashboard.partial_leave'),
-                _partialLeaveDates.union(_shortHoursDates).length,
-                Colors.orange,
-              ),
-            _legendChipWithCross(
-              theme,
-              translation.of('analytics.off_weekend_or_holiday'),
-            ),
-            _legendChip(
-              theme,
-              translation.of('dashboard.days_absent'),
-              0,
-              theme.colorScheme.error,
-            ),
-          ],
+        _legendChip(
+          theme,
+          translation.of('dashboard.days_present'),
+          _presentDates.length,
+          theme.colorScheme.primary,
+        ),
+        if (_partialLeaveDates.isNotEmpty || _shortHoursDates.isNotEmpty)
+          _legendChip(
+            theme,
+            translation.of('dashboard.partial_leave'),
+            _partialLeaveDates.union(_shortHoursDates).length,
+            Colors.orange,
+          ),
+        _legendChipWithCross(
+          theme,
+          translation.of('analytics.off_weekend_or_holiday'),
+        ),
+        _legendChip(
+          theme,
+          translation.of('dashboard.days_absent'),
+          0,
+          theme.colorScheme.error,
+        ),
+      ],
     );
   }
 
@@ -965,4 +1072,3 @@ class _AttendanceCalendarDetailScreenState
     );
   }
 }
-

@@ -19,6 +19,7 @@ import 'auth_module/presentation/splash_screen.dart';
 import 'base_module/presentation/sync_bloc/sync_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:form_builder_validators/localization/l10n.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 
 
@@ -37,6 +38,7 @@ Future<void> main() async {
   Bloc.observer = SimpleBlocObserver();
   // SyncfusionFlutter.init(); 
 
+  await initializeDateFormatting();
   await appTheme.init();
   await translation.init();
 
