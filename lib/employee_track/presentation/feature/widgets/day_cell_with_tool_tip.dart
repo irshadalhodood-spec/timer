@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 import '../../../../attendance_module/domain/entities/attendance_entity.dart';
 import '../../../../base_module/domain/entities/translation.dart';
@@ -9,7 +8,7 @@ import '../../../../base_module/presentation/util/locale_digits.dart';
 
 /// A calendar cell that shows a lightweight tooltip-style overlay on tap.
 class DayCellWithTooltip extends StatefulWidget {
-  const DayCellWithTooltip({
+  const DayCellWithTooltip({super.key, 
     required this.date,
     required this.dayRecords,
     required this.theme,

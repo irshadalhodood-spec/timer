@@ -8,6 +8,7 @@ import '../../attendance_module/domain/repositories/attendance_repository.dart';
 import '../../employee_track/domain/repositories/break_record_repository.dart';
 import '../../base_module/domain/repositories/sync_queue_repository.dart';
 import '../../base_module/domain/repositories/working_hours_repository.dart';
+import '../../base_module/data/services/geo_service.dart';
 
 part 'attendance_event.dart';
 part 'attendance_state.dart';
@@ -18,11 +19,13 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     required BreakRecordRepository breakRecordRepository,
     required SyncQueueRepository syncQueueRepository,
     required WorkingHoursRepository workingHoursRepository,
+    required GeoService geoService,
     required String userId,
   })  : _attendance = attendanceRepository,
         _breakRecord = breakRecordRepository,
         _syncQueue = syncQueueRepository,
         _workingHours = workingHoursRepository,
+        _geoService = geoService,
         _userId = userId,
         super(AttendanceState.initial) {
     on<AttendanceLoadRequested>(_onLoadRequested);
@@ -37,6 +40,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   final BreakRecordRepository _breakRecord;
   final SyncQueueRepository _syncQueue;
   final WorkingHoursRepository _workingHours;
+  final GeoService _geoService;
   final String _userId;
 
   /// Effective auto-checkout time for a session that started on [checkInDateLocal] (midnight local).
@@ -201,13 +205,22 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       final today = await _attendance.getTodayCheckIn(_userId);
       if (today == null) return;
       final now = DateTime.now();
+      double? checkOutLat = event.lat;
+      double? checkOutLng = event.lng;
+      String? checkOutAddress = event.address;
+      if (checkOutLat == null || checkOutLng == null || checkOutAddress == null) {
+        final geo = await _geoService.getCurrentLocationWithAddress();
+        checkOutLat ??= geo?.latitude;
+        checkOutLng ??= geo?.longitude;
+        checkOutAddress ??= geo?.address;
+      }
       final breaks = await _breakRecord.getByAttendanceId(today.id);
       final breakSeconds = _totalBreakSecondsFromRecords(breaks, now);
       final updated = today.copyWith(
         checkOutAt: now,
-        checkOutLat: event.lat,
-        checkOutLng: event.lng,
-        checkOutAddress: event.address,
+        checkOutLat: checkOutLat,
+        checkOutLng: checkOutLng,
+        checkOutAddress: checkOutAddress,
         breakSeconds: breakSeconds,
         earlyCheckoutNote: event.earlyCheckoutNote,
         isEarlyCheckout: event.isEarlyCheckout,
@@ -310,14 +323,14 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         todayBreakSeconds: todayBreakSeconds,
         todaySessions: const [],
       ));
-      // API-style fetch (mock or real) via repository
+      // 1. Local-first: show cached data from local DB immediately
       var list = await _attendance.getAttendancesByUser(
         _userId,
         from: event.from,
         to: event.to,
       );
       list = await _enrichBreakSeconds(list);
-      final todaySessions = List<AttendanceEntity>.from(
+      var todaySessions = List<AttendanceEntity>.from(
         list.where((a) => !a.checkInAt.isBefore(startOfToday) && a.checkInAt.isBefore(endOfToday)),
       )..sort((a, b) => a.checkInAt.compareTo(b.checkInAt));
       emit(AttendanceState.historyLoaded(
@@ -327,6 +340,32 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         todayBreakSeconds: todayBreakSeconds,
         todaySessions: todaySessions,
       ));
+      // 2. Then refresh from REST API and merge into local DB; re-read from local and emit
+      try {
+        await _attendance.refreshAttendanceHistoryFromApi(
+          _userId,
+          event.from!,
+          event.to!,
+        );
+        list = await _attendance.getAttendancesByUser(
+          _userId,
+          from: event.from,
+          to: event.to,
+        );
+        list = await _enrichBreakSeconds(list);
+        todaySessions = List<AttendanceEntity>.from(
+          list.where((a) => !a.checkInAt.isBefore(startOfToday) && a.checkInAt.isBefore(endOfToday)),
+        )..sort((a, b) => a.checkInAt.compareTo(b.checkInAt));
+        emit(AttendanceState.historyLoaded(
+          list,
+          todayAttendance: todayAttendance,
+          todayBreaks: todayBreaks,
+          todayBreakSeconds: todayBreakSeconds,
+          todaySessions: todaySessions,
+        ));
+      } catch (_) {
+        // Keep showing local data on API failure (offline / network error)
+      }
     } catch (e) {
       emit(AttendanceState.failure(e.toString()));
     }

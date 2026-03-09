@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 
+// ignore: must_be_immutable
 class CustomDropdownMenu extends StatefulWidget {
   late String myVal;
   late List<String> myList;

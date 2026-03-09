@@ -17,6 +17,7 @@ import '../../../../dashboard_module/domain/attendance_bloc.dart';
 import '../bloc/mothly_data_cubit/monthly_data_cubit.dart';
 import '../bloc/mothly_data_cubit/monthly_data_state.dart';
 import '../models/day_models.dart';
+import '../widgets/show_attendance_history_details.dart';
 import 'attendance_calendar_detail_screen.dart';
 import '../widgets/attendance_history_card.dart';
 import '../widgets/day_bar_widget.dart';
@@ -35,6 +36,7 @@ class AnalyticsTabScreen extends StatefulWidget {
 class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
   var _loaded = false;
   List<AttendanceEntity>? _lastLoadedList;
+
   /// Selected day in the weekly chart; null = show week summary.
   DateTime? _selectedWeekDay;
   List<int> get _weekendWeekdays => widget.weekendWeekdays ?? [6, 7];
@@ -79,7 +81,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
           }
           // After break/checkout actions the bloc emits checkedIn/checkedOut without
           // going through a history state — re-request history so analytics stays fresh.
-          if (state is AttendanceStateCheckedIn || state is AttendanceStateCheckedOut) {
+          if (state is AttendanceStateCheckedIn ||
+              state is AttendanceStateCheckedOut) {
             final now = DateTime.now();
             context.read<AttendanceBloc>().add(
               AttendanceHistoryRequested(
@@ -91,21 +94,31 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
         },
         child: BlocBuilder<AttendanceBloc, AttendanceState>(
           buildWhen: (a, b) {
-            if (a is AttendanceStateHistoryLoaded != b is AttendanceStateHistoryLoaded) return true;
-            if (a is AttendanceStateHistoryLoading != b is AttendanceStateHistoryLoading) return true;
+            if (a is AttendanceStateHistoryLoaded !=
+                b is AttendanceStateHistoryLoaded)
+              return true;
+            if (a is AttendanceStateHistoryLoading !=
+                b is AttendanceStateHistoryLoading)
+              return true;
             // Rebuild when live break seconds change during an active session.
-            if (b is AttendanceStateCheckedIn && a is AttendanceStateCheckedIn) {
-              return a.breakSeconds != b.breakSeconds || a.breaks.length != b.breaks.length;
+            if (b is AttendanceStateCheckedIn &&
+                a is AttendanceStateCheckedIn) {
+              return a.breakSeconds != b.breakSeconds ||
+                  a.breaks.length != b.breaks.length;
             }
-            if (b is AttendanceStateHistoryLoaded && a is AttendanceStateHistoryLoaded) {
-              return a.todayBreakSeconds != b.todayBreakSeconds || a.list.length != b.list.length;
+            if (b is AttendanceStateHistoryLoaded &&
+                a is AttendanceStateHistoryLoaded) {
+              return a.todayBreakSeconds != b.todayBreakSeconds ||
+                  a.list.length != b.list.length;
             }
             return false;
           },
           builder: (context, state) {
             // Patch today's attendance record in the list with live breakSeconds so
             // graph and history cards reflect real-time break duration.
-            final rawList = state is AttendanceStateHistoryLoaded ? state.list : _lastLoadedList;
+            final rawList = state is AttendanceStateHistoryLoaded
+                ? state.list
+                : _lastLoadedList;
             final list = _withLiveTodayBreaks(rawList, state);
             final isLoading = state is AttendanceStateHistoryLoading;
             final showFullScreenLoading = isLoading && list == null;
@@ -129,7 +142,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                         list,
                         now,
                         selectedDate: _selectedWeekDay,
-                        onDaySelected: (date) => setState(() => _selectedWeekDay = date),
+                        onDaySelected: (date) =>
+                            setState(() => _selectedWeekDay = date),
                       ),
                       const SizedBox(height: 24),
                       BlocBuilder<MonthlyScoreCubit, MonthlyScoreState>(
@@ -174,29 +188,29 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     for (final day in weekDays) {
       final dayStart = DateTime(day.year, day.month, day.day);
       final dayEnd = dayStart.add(const Duration(days: 1));
-      final isToday = day.year == todayNormalized.year &&
+      final isToday =
+          day.year == todayNormalized.year &&
           day.month == todayNormalized.month &&
           day.day == todayNormalized.day;
       var workSeconds = 0;
       var breakSeconds = 0;
-      final daySessions =
-          list
-              .where(
-                (a) {
-                  final checkInLocal = a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
-                  return checkInLocal.isAfter(dayStart) && checkInLocal.isBefore(dayEnd);
-                },
-              )
-              .toList()
-            ..sort((a, b) => a.checkInAt.compareTo(b.checkInAt));
+      final daySessions = list.where((a) {
+        final checkInLocal = a.checkInAt.isUtc
+            ? a.checkInAt.toLocal()
+            : a.checkInAt;
+        return checkInLocal.isAfter(dayStart) && checkInLocal.isBefore(dayEnd);
+      }).toList()..sort((a, b) => a.checkInAt.compareTo(b.checkInAt));
       for (final a in daySessions) {
-        final checkInLocal = a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
+        final checkInLocal = a.checkInAt.isUtc
+            ? a.checkInAt.toLocal()
+            : a.checkInAt;
         final out = a.checkOutAt != null
             ? (a.checkOutAt!.isUtc ? a.checkOutAt!.toLocal() : a.checkOutAt!)
             : (isToday ? now : dayEnd);
         if (out.isAfter(dayStart)) {
           final end = out.isBefore(dayEnd) ? out : dayEnd;
-          final seg = (end.difference(checkInLocal).inSeconds - a.breakSeconds).clamp(0, 86400 * 2);
+          final seg = (end.difference(checkInLocal).inSeconds - a.breakSeconds)
+              .clamp(0, 86400 * 2);
           workSeconds += seg;
           breakSeconds += a.breakSeconds;
         }
@@ -207,12 +221,16 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
       final workHours = totalWorkHours > 8 ? 8.0 : totalWorkHours;
       final overtimeHours = totalWorkHours > 8 ? totalWorkHours - 8 : 0.0;
       // Short only when worked > 0 but < 8h (and no OT)
-      final shortHours = totalWorkHours > 0 && totalWorkHours < 8 ? 8.0 - totalWorkHours : 0.0;
+      final shortHours = totalWorkHours > 0 && totalWorkHours < 8
+          ? 8.0 - totalWorkHours
+          : 0.0;
       final isPartialLeave =
           (daySessions.isNotEmpty &&
-          daySessions.last.checkOutAt != null &&
-          daySessions.last.isEarlyCheckout) ||
-          (daySessions.isNotEmpty && shortHours > 0 && daySessions.last.checkOutAt != null);
+              daySessions.last.checkOutAt != null &&
+              daySessions.last.isEarlyCheckout) ||
+          (daySessions.isNotEmpty &&
+              shortHours > 0 &&
+              daySessions.last.checkOutAt != null);
       dayData.add(
         DayHours(
           workHours: workHours,
@@ -228,9 +246,15 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     final selectedIndex = selectedDate == null
         ? null
         : weekDays.indexWhere(
-            (d) => d.year == selectedDate.year && d.month == selectedDate.month && d.day == selectedDate.day,
+            (d) =>
+                d.year == selectedDate.year &&
+                d.month == selectedDate.month &&
+                d.day == selectedDate.day,
           );
-    final int? detailIndex = (selectedIndex != null && selectedIndex >= 0 && selectedIndex < dayData.length)
+    final int? detailIndex =
+        (selectedIndex != null &&
+            selectedIndex >= 0 &&
+            selectedIndex < dayData.length)
         ? selectedIndex
         : null;
     // Week totals (when no selection)
@@ -238,10 +262,18 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     final weekBreak = dayData.fold<double>(0, (s, d) => s + d.breakHours);
     final weekOvertime = dayData.fold<double>(0, (s, d) => s + d.overtimeHours);
     final weekShort = dayData.fold<double>(0, (s, d) => s + d.shortHours);
-    final detailWork = detailIndex != null ? dayData[detailIndex].workHours : weekWork;
-    final detailBreak = detailIndex != null ? dayData[detailIndex].breakHours : weekBreak;
-    final detailOvertime = detailIndex != null ? dayData[detailIndex].overtimeHours : weekOvertime;
-    final detailShort = detailIndex != null ? dayData[detailIndex].shortHours : weekShort;
+    final detailWork = detailIndex != null
+        ? dayData[detailIndex].workHours
+        : weekWork;
+    final detailBreak = detailIndex != null
+        ? dayData[detailIndex].breakHours
+        : weekBreak;
+    final detailOvertime = detailIndex != null
+        ? dayData[detailIndex].overtimeHours
+        : weekOvertime;
+    final detailShort = detailIndex != null
+        ? dayData[detailIndex].shortHours
+        : weekShort;
     final detailLabel = detailIndex != null
         ? AppDateTimeFormat.formatWeekday(weekDays[detailIndex])
         : translation.of('analytics.this_week');
@@ -314,7 +346,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               children: List.generate(7, (i) {
                 final d = dayData[i];
                 final day = weekDays[i];
-                final isSelected = selectedDate != null &&
+                final isSelected =
+                    selectedDate != null &&
                     day.year == selectedDate.year &&
                     day.month == selectedDate.month &&
                     day.day == selectedDate.day;
@@ -368,34 +401,46 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                     _summaryChip(
                       context,
                       translation.of('analytics.work'),
-                      LocaleDigits.format(detailWork > 0
-                          ? '${detailWork.toStringAsFixed(1)}${translation.of('analytics.h')}'
-                          : '—'),
+                      LocaleDigits.format(
+                        detailWork > 0
+                            ? '${detailWork.toStringAsFixed(1)}${translation.of('analytics.h')}'
+                            : '—',
+                      ),
                       workColor,
                     ),
                     _summaryChip(
                       context,
                       translation.of('analytics.break'),
-                      LocaleDigits.format(detailBreak > 0
-                          ? '${detailBreak.toStringAsFixed(1)}${translation.of('analytics.h')}'
-                          : '—'),
+                      LocaleDigits.format(
+                        detailBreak > 0
+                            ? '${detailBreak.toStringAsFixed(1)}${translation.of('analytics.h')}'
+                            : '—',
+                      ),
                       breakColor,
                     ),
                     _summaryChip(
                       context,
                       translation.of('analytics.ot'),
-                      LocaleDigits.format(detailOvertime > 0
-                          ? '+${detailOvertime.toStringAsFixed(1)}${translation.of('analytics.h')}'
-                          : '—'),
-                      detailOvertime > 0 ? overtimeColor : theme.colorScheme.onSurfaceVariant,
+                      LocaleDigits.format(
+                        detailOvertime > 0
+                            ? '+${detailOvertime.toStringAsFixed(1)}${translation.of('analytics.h')}'
+                            : '—',
+                      ),
+                      detailOvertime > 0
+                          ? overtimeColor
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
                     _summaryChip(
                       context,
                       translation.of('analytics.short'),
-                      LocaleDigits.format(detailShort > 0
-                          ? '-${detailShort.toStringAsFixed(1)}${translation.of('analytics.h')}'
-                          : '—'),
-                      detailShort > 0 ? shortColor : theme.colorScheme.onSurfaceVariant,
+                      LocaleDigits.format(
+                        detailShort > 0
+                            ? '-${detailShort.toStringAsFixed(1)}${translation.of('analytics.h')}'
+                            : '—',
+                      ),
+                      detailShort > 0
+                          ? shortColor
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
                   ],
                 ),
@@ -474,8 +519,14 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     if (list != null) {
       final byDate = <DateTime, List<AttendanceEntity>>{};
       for (final a in list) {
-        final checkInLocal = a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
-        final d = DateTime(checkInLocal.year, checkInLocal.month, checkInLocal.day);
+        final checkInLocal = a.checkInAt.isUtc
+            ? a.checkInAt.toLocal()
+            : a.checkInAt;
+        final d = DateTime(
+          checkInLocal.year,
+          checkInLocal.month,
+          checkInLocal.day,
+        );
         presentDates.add(d);
         byDate.putIfAbsent(d, () => []).add(a);
         calendarByDate.putIfAbsent(d, () => []).add(a);
@@ -496,7 +547,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
             0,
             (s, a) => s + _workedSecondsForDay(a, entry.key, now: null),
           );
-          if (totalWorked > 0 && totalWorked < AppConstants.expectedWorkSecondsPerDay) {
+          if (totalWorked > 0 &&
+              totalWorked < AppConstants.expectedWorkSecondsPerDay) {
             shortHoursDates.add(entry.key);
           }
         }
@@ -505,7 +557,9 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
 
     final displayYear = scoreState.selectedYear ?? now.year;
     final monthYearLabel = scoreState.calendarViewMode == 'monthly'
-        ? LocaleDigits.format('${AppDateTimeFormat.formatMonth(DateTime(now.year, now.month))} $displayYear')
+        ? LocaleDigits.format(
+            '${AppDateTimeFormat.formatMonth(DateTime(now.year, now.month))} $displayYear',
+          )
         : LocaleDigits.ofInt(displayYear);
 
     final content = Container(
@@ -513,7 +567,9 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,7 +626,10 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                     underline: const SizedBox.shrink(),
                     value: scoreState.selectedYear ?? now.year,
                     items: List.generate(5, (i) => now.year - i).map((y) {
-                      return DropdownMenuItem<int>(value: y, child: LocaleDigitsText('$y'));
+                      return DropdownMenuItem<int>(
+                        value: y,
+                        child: LocaleDigitsText('$y'),
+                      );
                     }).toList(),
                     onChanged: (int? year) {
                       if (year != null) {
@@ -665,7 +724,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              color: theme.colorScheme.surface.withValues(alpha:0.7),
+              color: theme.colorScheme.surface.withValues(alpha: 0.7),
             ),
             child: const Center(
               child: SizedBox(
@@ -773,7 +832,11 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                     isShortHours,
                     dayIndex,
                   );
-                  final tappable = present && !isUpcoming && dayRecords != null && cellSizeOverride == null;
+                  final tappable =
+                      present &&
+                      !isUpcoming &&
+                      dayRecords != null &&
+                      cellSizeOverride == null;
                   return Padding(
                     padding: EdgeInsets.only(right: col < 6 ? gap : 0),
                     child: SizedBox(
@@ -785,7 +848,11 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                               dayRecords: dayRecords,
                               theme: theme,
                               child: cell,
-                              workedSecondsForDay: (a) => _workedSecondsForDay(a, d, now: DateTime.now()),
+                              workedSecondsForDay: (a) => _workedSecondsForDay(
+                                a,
+                                d,
+                                now: DateTime.now(),
+                              ),
                             )
                           : cell,
                     ),
@@ -832,7 +899,8 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     for (int day = 1; day <= last.day; day++) {
       final d = DateTime(year, month, day);
       if (d.isAfter(todayNormalized)) continue;
-      if (partialLeaveDates.contains(d) || (shortHoursDates?.contains(d) ?? false)) {
+      if (partialLeaveDates.contains(d) ||
+          (shortHoursDates?.contains(d) ?? false)) {
         partialLeave++;
       }
       if (presentDates.contains(d)) {
@@ -874,7 +942,11 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(2),
             ),
-            child: Icon(Icons.close, size: 6, color: theme.colorScheme.onSurfaceVariant),
+            child: Icon(
+              Icons.close,
+              size: 6,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(width: 4),
           LocaleDigitsText('$label: $value', style: minimalStyle),
@@ -885,11 +957,26 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
       spacing: 4,
       runSpacing: 4,
       children: [
-        minimalChip(translation.of('dashboard.days_present'), present, theme.colorScheme.primary),
+        minimalChip(
+          translation.of('dashboard.days_present'),
+          present,
+          theme.colorScheme.primary,
+        ),
         if (partialLeave > 0)
-          minimalChip(translation.of('dashboard.partial_leave'), partialLeave, Colors.orange),
-        minimalChip(translation.of('dashboard.days_absent'), absent, theme.colorScheme.error),
-        minimalChipCross(translation.of('analytics.off_weekend_or_holiday'), offDays),
+          minimalChip(
+            translation.of('dashboard.partial_leave'),
+            partialLeave,
+            Colors.orange,
+          ),
+        minimalChip(
+          translation.of('dashboard.days_absent'),
+          absent,
+          theme.colorScheme.error,
+        ),
+        minimalChipCross(
+          translation.of('analytics.off_weekend_or_holiday'),
+          offDays,
+        ),
       ],
     );
   }
@@ -967,7 +1054,9 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     for (int i = 0; i < total; i++) {
       final date = first.add(Duration(days: i));
       if (date.isAfter(todayNormalized)) continue;
-      if (partialLeaveDates.contains(date) || (shortHoursDates?.contains(date) ?? false)) partialLeave++;
+      if (partialLeaveDates.contains(date) ||
+          (shortHoursDates?.contains(date) ?? false))
+        partialLeave++;
       if (presentDates.contains(date)) {
         present++;
       } else if (_isOffDay(date)) {
@@ -1021,7 +1110,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     Color color;
     bool showCross = false;
     if (empty || isUpcoming) {
-      color = theme.colorScheme.surfaceContainerHighest.withValues(alpha:  0.25);
+      color = theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.25);
     } else if (present && (isPartialLeave || isShortHours)) {
       color = Colors.orange;
     } else if (present) {
@@ -1039,12 +1128,13 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
       margin: const EdgeInsets.all(0.5),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(2)
       ),
       child: dayNumber != null
           ? Stack(
               alignment: Alignment.center,
               children: [
+                
                 Center(
                   child: Text(
                     LocaleDigits.ofInt(dayNumber),
@@ -1055,6 +1145,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
                     ),
                   ),
                 ),
+
                 if (showCross)
                   Positioned(
                     top: 2,
@@ -1068,14 +1159,14 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               ],
             )
           : showCross
-              ? Center(
-                  child: Icon(
-                    Icons.close,
-                    size: 10,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                )
-              : null,
+          ? Center(
+              child: Icon(
+                Icons.close,
+                size: 10,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            )
+          : null,
     );
   }
 
@@ -1149,8 +1240,14 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     }
     final byDate = <DateTime, List<AttendanceEntity>>{};
     for (final a in list) {
-      final checkInLocal = a.checkInAt.isUtc ? a.checkInAt.toLocal() : a.checkInAt;
-      final d = DateTime(checkInLocal.year, checkInLocal.month, checkInLocal.day);
+      final checkInLocal = a.checkInAt.isUtc
+          ? a.checkInAt.toLocal()
+          : a.checkInAt;
+      final d = DateTime(
+        checkInLocal.year,
+        checkInLocal.month,
+        checkInLocal.day,
+      );
       byDate.putIfAbsent(d, () => []).add(a);
     }
     final sortedDates = byDate.keys.toList()..sort((a, b) => b.compareTo(a));
@@ -1193,8 +1290,17 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
               isPartialLeave: isPartialLeave,
               earlyCheckoutNote: earlyCheckoutNote,
               now: now,
-              onTap: () async {
-                await _showAttendanceDetailSheet(context, date, dayRecords);
+              onTap: () {
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => ShowAttendanceHistoryDetails(
+                    date: date,
+                    dayRecords: dayRecords,
+                  ),
+                );
               },
             );
           },
@@ -1203,7 +1309,6 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     );
   }
 
- 
   List<AttendanceEntity>? _withLiveTodayBreaks(
     List<AttendanceEntity>? list,
     AttendanceState state,
@@ -1216,10 +1321,12 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     if (state is AttendanceStateCheckedIn) {
       liveAttendance = state.attendance;
       liveBreakSeconds = state.breakSeconds;
-    } else if (state is AttendanceStateHistoryLoaded && state.todayAttendance != null) {
+    } else if (state is AttendanceStateHistoryLoaded &&
+        state.todayAttendance != null) {
       liveAttendance = state.todayAttendance;
       liveBreakSeconds = state.todayBreakSeconds;
-    } else if (state is AttendanceStateHistoryLoading && state.todayAttendance != null) {
+    } else if (state is AttendanceStateHistoryLoading &&
+        state.todayAttendance != null) {
       liveAttendance = state.todayAttendance;
       liveBreakSeconds = state.todayBreakSeconds;
     }
@@ -1239,9 +1346,14 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
   }
 
   static DateTime _effectiveCheckOut(AttendanceEntity a, {DateTime? now}) {
-    if (a.checkOutAt != null) return a.checkOutAt!.isUtc ? a.checkOutAt!.toLocal() : a.checkOutAt!;
+    if (a.checkOutAt != null)
+      return a.checkOutAt!.isUtc ? a.checkOutAt!.toLocal() : a.checkOutAt!;
     final checkInLocal = _checkInLocal(a);
-    final startOfDay = DateTime(checkInLocal.year, checkInLocal.month, checkInLocal.day);
+    final startOfDay = DateTime(
+      checkInLocal.year,
+      checkInLocal.month,
+      checkInLocal.day,
+    );
     final endOfCheckInDay = startOfDay.add(const Duration(days: 1));
     if (now != null) {
       return now.isBefore(endOfCheckInDay) ? now : endOfCheckInDay;
@@ -1249,8 +1361,11 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     return endOfCheckInDay;
   }
 
- 
-  static int _workedSecondsForDay(AttendanceEntity a, DateTime dateLocal, {DateTime? now}) {
+  static int _workedSecondsForDay(
+    AttendanceEntity a,
+    DateTime dateLocal, {
+    DateTime? now,
+  }) {
     final checkInLocal = _checkInLocal(a);
     final startOfDay = DateTime(dateLocal.year, dateLocal.month, dateLocal.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
@@ -1258,628 +1373,13 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
         ? _effectiveCheckOut(a)
         : (now != null ? (now.isBefore(endOfDay) ? now : endOfDay) : endOfDay);
     final endAtCapped = endAt.isAfter(endOfDay) ? endOfDay : endAt;
-    final effectiveStart = checkInLocal.isBefore(startOfDay) ? startOfDay : checkInLocal;
+    final effectiveStart = checkInLocal.isBefore(startOfDay)
+        ? startOfDay
+        : checkInLocal;
     if (!endAtCapped.isAfter(effectiveStart)) return 0;
-    final seconds = endAtCapped.difference(effectiveStart).inSeconds - a.breakSeconds;
+    final seconds =
+        endAtCapped.difference(effectiveStart).inSeconds - a.breakSeconds;
     return seconds.clamp(0, 86400 * 2);
-  }
-
-  Future<void> _showAttendanceDetailSheet(
-    BuildContext context,
-    DateTime date,
-    List<AttendanceEntity> dayRecords,
-  ) async {
-    final breakRepo = context.read<BreakRecordRepository>();
-    final sessionBreaks = <String, List<BreakRecordEntity>>{};
-    for (final a in dayRecords) {
-      sessionBreaks[a.id] = await breakRepo.getByAttendanceId(a.id);
-    }
-    if (!context.mounted) return;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final now = DateTime.now();
-    var totalWorked = 0;
-    var totalBreak = 0;
-    for (final a in dayRecords) {
-      totalWorked += _workedSecondsForDay(a, date, now: now);
-      totalBreak += a.breakSeconds;
-    }
-    final workedH = totalWorked ~/ 3600;
-    final workedM = (totalWorked % 3600) ~/ 60;
-    final breakM = totalBreak ~/ 60;
-    final totalWorkedHours = totalWorked / 3600.0;
-    final dayOtHours = totalWorkedHours > 8 ? totalWorkedHours - 8 : 0.0;
-    final dayShortHours = totalWorkedHours > 0 && totalWorkedHours < 8
-        ? 8 - totalWorkedHours
-        : 0.0;
-    final isPresent = dayRecords.isNotEmpty;
-    final daySessions = List<AttendanceEntity>.from(dayRecords)
-      ..sort((a, b) => a.checkInAt.compareTo(b.checkInAt));
-    final isPartialLeave =
-        daySessions.isNotEmpty &&
-        daySessions.last.checkOutAt != null &&
-        daySessions.last.isEarlyCheckout;
-    final earlyCheckoutNote = dayRecords
-        .where(
-          (a) => a.earlyCheckoutNote != null && a.earlyCheckoutNote!.isNotEmpty,
-        )
-        .map((a) => a.earlyCheckoutNote!)
-        .firstOrNull;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.65,
-        minChildSize: 0.4,
-        maxChildSize: 0.92,
-        builder: (context, scrollController) => Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(
-              top: BorderSide(
-                color: colorScheme.outline.withValues(alpha: 0.08),
-              ),
-              left: BorderSide(
-                color: colorScheme.outline.withValues(alpha: 0.08),
-              ),
-              right: BorderSide(
-                color: colorScheme.outline.withValues(alpha: 0.08),
-              ),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.shadow.withValues(alpha: 0.12),
-                blurRadius: 20,
-                offset: const Offset(0, -6),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 14),
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.outline.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                AppDateTimeFormat.formatWeekday(date),
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                AppDateTimeFormat.formatDate(date),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isPartialLeave) ...[
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.orange.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                child: Text(
-                                  translation.of('dashboard.partial_leave'),
-                                  style: theme.textTheme.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.orange.shade800,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                            ],
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isPresent
-                                    ? colorScheme.primaryContainer
-                                    : colorScheme.errorContainer,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isPresent
-                                      ? colorScheme.primary.withValues(
-                                          alpha: 0.3,
-                                        )
-                                      : colorScheme.error.withValues(
-                                          alpha: 0.3,
-                                        ),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                isPresent
-                                    ? translation.of('dashboard.attendant')
-                                    : translation.of('dashboard.absent'),
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: isPresent
-                                      ? colorScheme.onPrimaryContainer
-                                      : colorScheme.onErrorContainer,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    if (earlyCheckoutNote != null &&
-                        earlyCheckoutNote.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.orange.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              size: 20,
-                              color: Colors.orange.shade700,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    translation.of(
-                                      'dashboard.early_checkout_reason',
-                                    ),
-                                    style: theme.textTheme.labelMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.orange.shade800,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    earlyCheckoutNote,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (dayRecords.isNotEmpty &&
-                        (totalWorked > 0 || totalBreak > 0)) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest.withValues(
-                            alpha: 0.6,
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: colorScheme.outline.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: Wrap(
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.schedule_rounded,
-                                  size: 20,
-                                  color: colorScheme.primary,
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  translation.of('attendance.worked'),
-                                  style: theme.textTheme.labelMedium
-                                      ?.copyWith(
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  LocaleDigits.format('$workedH${translation.of('analytics.h')} $workedM${translation.of('analytics.mi')}'),
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            AppPadding(multipliedBy: 0.5),
-                            Container(
-                              width: 1,
-                              height: 24,
-                              color: colorScheme.outline,
-                            ),
-                            AppPadding(multipliedBy: 0.5),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.free_breakfast_rounded,
-                                  size: 20,
-                                  color: colorScheme.tertiary,
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  translation.of('attendance.breaks'),
-                                  style: theme.textTheme.labelMedium
-                                      ?.copyWith(
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  LocaleDigits.format('$breakM ${translation.of('analytics.min')}'),
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                             if (dayOtHours > 0)
-                             Row(
-                               mainAxisSize: MainAxisSize.min,
-                               children: [
-                                 Icon(
-                                   Icons.more_time_outlined,
-                                   size: 20,
-                                   color: Colors.orange,
-                                 ),
-                                 const SizedBox(width: 10),
-                                 Text(
-                                   translation.of('analytics.ot'),
-                                   style: theme.textTheme.labelMedium
-                                       ?.copyWith(
-                                         color: colorScheme.onSurfaceVariant,
-                                       ),
-                                 ),
-                                 const SizedBox(width: 6),
-                                 Text(
-                                   LocaleDigits.format(
-                                     '+${dayOtHours.toStringAsFixed(1)} ${translation.of('analytics.h')}',
-                                   ),
-                                   style: theme.textTheme.titleSmall?.copyWith(
-                                     fontWeight: FontWeight.w700,
-                                     color: colorScheme.onSurface,
-                                   ),
-                                 ),
-                               ],
-                             ),
-                            if (dayShortHours > 0) ...[
-                              AppPadding(multipliedBy: 0.5),
-                              Container(
-                                width: 1,
-                                height: 24,
-                                color: colorScheme.outline,
-                              ),
-                              AppPadding(multipliedBy: 0.5),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.timer_off_outlined,
-                                    size: 20,
-                                    color: Colors.orange,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    translation.of('analytics.st'),
-                                    style: theme.textTheme.labelMedium
-                                        ?.copyWith(
-                                          color: colorScheme.onSurfaceVariant,
-                                        ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    LocaleDigits.format(
-                                      '-${dayShortHours.toStringAsFixed(1)} ${translation.of('analytics.h')}',
-                                    ),
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.orange.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-                  children: [
-                    ...dayRecords.asMap().entries.map((entry) {
-                      final idx = entry.key;
-                      final a = entry.value;
-                      final worked = _workedSecondsForDay(a, date, now: now);
-                      final h = worked ~/ 3600;
-                      final m = (worked % 3600) ~/ 60;
-                      final bM = a.breakSeconds ~/ 60;
-                      final showSessionLabel = dayRecords.length > 1;
-                      final hasCheckOut = a.checkOutAt != null;
-                      final breaks = (sessionBreaks[a.id] ?? [])..sort((x, y) => x.startAt.compareTo(y.startAt));
-                      final workedHours = worked / 3600.0;
-                      final otHours = workedHours > 8 ? workedHours - 8 : 0.0;
-                      final shortHours = workedHours > 0 && workedHours < 8 ? 8 - workedHours : 0.0;
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          bottom: 16,
-                          top: idx > 0 ? 16 : 0,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerLow.withValues(
-                              alpha: 0.5,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.outline.withValues(alpha: 0.1),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (showSessionLabel) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.primaryContainer
-                                        .withValues(alpha: 0.8),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    LocaleDigits.format('${translation.of('analytics.sessions')} ${idx + 1}'),
-                                    style: theme.textTheme.labelLarge?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                              ],
-                              DetailRow(
-                                icon: Icons.login_rounded,
-                                label: translation.of('attendance.check_in_at'),
-                                value: AppDateTimeFormat.formatTime(a.checkInAt),
-                                subtitle: AddressDisplay.getDisplay(a.checkInAddress),
-                              ),
-                              ...breaks.expand((b) => [
-                                const SizedBox(height: 10),
-                                DetailRow(
-                                  icon: Icons.free_breakfast_rounded,
-                                  label: translation.of('dashboard.break_start'),
-                                  value: AppDateTimeFormat.formatTime(b.startAt),
-                                  subtitle: AddressDisplay.getDisplay(b.startAddress),
-                                ),
-                                const SizedBox(height: 10),
-                                DetailRow(
-                                  icon: Icons.coffee_rounded,
-                                  label: translation.of('dashboard.break_end'),
-                                  value: b.endAt != null
-                                      ? AppDateTimeFormat.formatTime(b.endAt!)
-                                      : '—',
-                                  subtitle: AddressDisplay.getDisplay(b.endAddress),
-                                  valueMuted: b.endAt == null,
-                                ),
-                              ]),
-                              const SizedBox(height: 10),
-                              DetailRow(
-                                icon: Icons.free_breakfast_rounded,
-                                label: translation.of('attendance.breaks'),
-                                value: LocaleDigits.format(bM > 0
-                                    ? '$bM ${translation.of('analytics.min')}'
-                                    : '0 ${translation.of('analytics.min')}'),
-                              ),
-                              const SizedBox(height: 10),
-                              DetailRow(
-                                icon: Icons.logout_rounded,
-                                label: translation.of(
-                                  'attendance.check_out_at',
-                                ),
-                                value: hasCheckOut
-                                    ? AppDateTimeFormat.formatTime(a.checkOutAt!)
-                                    : '—',
-                                subtitle: hasCheckOut
-                                    ? (a.isAutoCheckout
-                                        ? translation.of('dashboard.auto_closed_at_eod')
-                                        : AddressDisplay.getDisplay(a.checkOutAddress))
-                                    : null,
-                                valueMuted: !hasCheckOut,
-                              ),
-                              const SizedBox(height: 10),
-                              DetailRow(
-                                icon: Icons.schedule_rounded,
-                                label: translation.of('attendance.worked'),
-                                value: LocaleDigits.format('$h ${translation.of('analytics.h')}  $m ${translation.of('analytics.mi')}'),
-                              ),
-                              if (otHours > 0) ...[
-                                const SizedBox(height: 10),
-                                DetailRow(
-                                  icon: Icons.add_circle_outline_rounded,
-                                  label: translation.of('analytics.ot'),
-                                  value: LocaleDigits.format('+${otHours.toStringAsFixed(1)} ${translation.of('analytics.h')}'),
-                                ),
-                              ],
-                              if (shortHours > 0) ...[
-                                const SizedBox(height: 10),
-                                DetailRow(
-                                  icon: Icons.remove_circle_outline_rounded,
-                                  label: translation.of('analytics.st'),
-                                  value: LocaleDigits.format('-${shortHours.toStringAsFixed(1)} ${translation.of('analytics.h')}'),
-                                  valueMuted: true,
-                                ),
-                              ],
-                              if (a.earlyCheckoutNote != null &&
-                                  a.earlyCheckoutNote!.isNotEmpty) ...[
-                                const SizedBox(height: 10),
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.withValues(
-                                      alpha: 0.12,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.orange.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.info_outline_rounded,
-                                            size: 18,
-                                            color: Colors.orange.shade700,
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            translation.of(
-                                              'dashboard.early_checkout_reason',
-                                            ),
-                                            style: theme.textTheme.labelMedium
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.orange.shade800,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        a.earlyCheckoutNote!,
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: colorScheme.onSurface,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                              if (a.deviceInfo != null &&
-                                  a.deviceInfo!.isNotEmpty) ...[
-                                const SizedBox(height: 10),
-                                DetailRow(
-                                  icon: Icons.phone_android_rounded,
-                                  label: translation.of('analytics.device'),
-                                  value: a.deviceInfo!,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                    if (dayRecords.length > 1) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withValues(
-                            alpha: 0.4,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: colorScheme.primary.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            DetailRow(
-                              icon: Icons.today_rounded,
-                              label: translation.of('attendance.worked'),
-                              value:
-                                  LocaleDigits.format('$workedH${translation.of('analytics.h')} $workedM${translation.of('analytics.mi')}'),
-                              compact: true,
-                            ),
-                            const SizedBox(height: 8),
-                            DetailRow(
-                              icon: Icons.free_breakfast_rounded,
-                              label: translation.of('attendance.breaks'),
-                              value:
-                                  LocaleDigits.format('$breakM ${translation.of('analytics.min')}'),
-                              compact: true,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   bool _isOffDay(DateTime d) {
@@ -1898,4 +1398,3 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
     }
   }
 }
-

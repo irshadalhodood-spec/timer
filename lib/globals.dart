@@ -12,7 +12,7 @@ void showSnackBar(SnackBar snackBar) {
 void showToast(String message, {Duration? duration}) {
   final context = globalSnackBarKey.currentContext;
   if (context == null) {
-    print('Error: Context is null');
+    debugPrint('Error: Context is null');
     return;
   }
 
@@ -31,7 +31,6 @@ void showSuccessToast(String message, {Duration? duration}) {
     return;
   }
 
-  
   
 
   showSnackBar(

@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 class CustomBreadcrumbHeader extends StatelessWidget implements PreferredSizeWidget {
@@ -8,12 +7,12 @@ class CustomBreadcrumbHeader extends StatelessWidget implements PreferredSizeWid
   final double height;
 
   const CustomBreadcrumbHeader({
-    Key? key,
+    super.key,
     required this.crumbs,
     this.separator = ' > ',
     this.style,
     this.height = 48.0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

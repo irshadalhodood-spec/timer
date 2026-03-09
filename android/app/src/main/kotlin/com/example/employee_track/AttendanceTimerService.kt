@@ -42,6 +42,9 @@ class AttendanceTimerService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Must call startForeground() immediately (within ~5–10s) or Android kills the app
+        AttendanceNotificationHelper.startForegroundWithMinimalNotification(this)
+
         intent?.let {
             checkInAtIso = it.getStringExtra(EXTRA_CHECK_IN_ISO) ?: checkInAtIso
             breakSeconds = it.getIntExtra(EXTRA_BREAK_SECONDS, breakSeconds)

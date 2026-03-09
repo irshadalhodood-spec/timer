@@ -44,7 +44,7 @@ class _MainScreenState extends State<MainScreen> {
         title: Row(
           children: [
             Icon(Iconsax.timer, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
+                const SizedBox(width: 8),
             Text(AppConstants.appName),
           ],
         ),

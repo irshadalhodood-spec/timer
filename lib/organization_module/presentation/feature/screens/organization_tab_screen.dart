@@ -110,9 +110,7 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
           child: SizedBox(
             width: 32,
             height: 32,
-            child: CupertinoActivityIndicator(
-             
-            ),
+            child: CupertinoActivityIndicator(),
           ),
         ),
       );

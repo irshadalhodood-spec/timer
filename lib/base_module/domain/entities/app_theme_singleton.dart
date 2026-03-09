@@ -1,3 +1,4 @@
+// ignore: depend_on_referenced_packages
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -40,7 +41,6 @@ class AppTheme {
   }
 
   void _setThemeState() {
-    // Note: this app has only light mode for now
     _themeState = ThemeState.light;
 
     switch (_themeType) {
@@ -84,9 +84,7 @@ class AppTheme {
         return AppThemes.appThemeData(context)[ThemeState.dark]!;
       case ThemeState.light:
         return AppThemes.appThemeData(context)[ThemeState.light]!;
-      default:
-        return AppThemes.appThemeData(context)[ThemeState.light]!;
-    }
+      }
   }
 }
 

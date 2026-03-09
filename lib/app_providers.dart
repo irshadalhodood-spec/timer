@@ -140,6 +140,7 @@ Widget buildDashboardProviders({
           breakRecordRepository: context.read<BreakRecordRepository>(),
           syncQueueRepository: context.read<SyncQueueRepository>(),
           workingHoursRepository: context.read<WorkingHoursRepository>(),
+          geoService: context.read<GeoService>(),
           userId: userId,
         )..add(const AttendanceLoadRequested()),
       ),

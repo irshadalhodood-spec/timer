@@ -1,18 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
-
 import '../../../../../attendance_module/domain/entities/attendance_entity.dart';
 import '../../../../../base_module/domain/entities/translation.dart';
 import '../../../domain/entities/break_record_entity.dart';
 import '../../../domain/repositories/break_record_repository.dart';
 import '../../../../../base_module/presentation/core/values/app_constants.dart';
-import '../../../../../base_module/presentation/util/date_time_format.dart';
 import '../../../../../base_module/presentation/util/locale_digits.dart';
 import '../models/attendance_calander_models.dart';
+import '../widgets/day_timeline_view.dart';
 
 class AttendanceCalendarDetailScreen extends StatefulWidget {
   const AttendanceCalendarDetailScreen({
@@ -44,11 +42,6 @@ class _AttendanceCalendarDetailScreenState
 
   static const double _minCellSize = 46;
   static const double _maxCellSize = 62;
-  static const int _dayViewStartHour = 0;
-  static const int _dayViewEndHour = 24;
-
-  /// Fixed height per hour row (gap between 1pm, 2pm, etc.). Larger = taller card and more spacing.
-  static const double _hourRowHeight = 80;
 
   @override
   void initState() {
@@ -107,7 +100,8 @@ class _AttendanceCalendarDetailScreenState
   }
 
   bool _isOffDay(DateTime d) {
-    final weekend = widget.weekendWeekdays ?? [6, 7];
+    //Here Add week date like 7= sunday, 6=saturday etc ..
+    final weekend = widget.weekendWeekdays ?? [ 7];
     final holidays = widget.holidays ?? [];
     if (weekend.contains(d.weekday)) return true;
     return holidays.any((h) => h.month == d.month && h.day == d.day);
@@ -280,13 +274,6 @@ class _AttendanceCalendarDetailScreenState
     final firstDay = DateTime(now.year - 1, 1, 1);
     final lastDay = DateTime(now.year + 1, 12, 31);
 
-    final today = DateTime(now.year, now.month, now.day);
-    final isSelectedToday =
-        _selectedDay != null &&
-        _selectedDay!.year == today.year &&
-        _selectedDay!.month == today.month &&
-        _selectedDay!.day == today.day;
-
     return Scaffold(
       appBar: AppBar(title: Text(translation.of('analytics.calendar_detail'))),
       body: SingleChildScrollView(
@@ -317,7 +304,6 @@ class _AttendanceCalendarDetailScreenState
                   //   padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                   //   child: Row(
                   //     children: [
-                  //       if (!isSelectedToday)
                   //         TextButton.icon(
                   //           onPressed: () {
                   //             setState(() {
@@ -418,6 +404,12 @@ class _AttendanceCalendarDetailScreenState
                               ),
                               defaultTextStyle: theme.textTheme.bodySmall!,
                               weekendTextStyle: theme.textTheme.bodySmall!,
+                              selectedTextStyle: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 26,
+                                color: Colors.white
+                              ),
+                              
                               outsideDaysVisible: true,
 
                               todayDecoration: BoxDecoration(
@@ -512,18 +504,38 @@ class _AttendanceCalendarDetailScreenState
                 ),
               ),
             ),
-            _buildHourlyDayView(theme, _selectedDay ?? _focusedDay),
+            _buildScheduleSection(theme, _selectedDay ?? _focusedDay),
           ],
         ),
       ),
     );
   }
 
-  String _hourLabel(int hour) {
-    if (hour == 0) return translation.of('analytics.12_am');
-    if (hour == 12) return translation.of('analytics.12_pm');
-    if (hour < 12) return '$hour ${translation.of('analytics.am')}';
-    return '${hour - 12} ${translation.of('analytics.pm')}';
+  Widget _buildScheduleSection(ThemeData theme, DateTime day) {
+    final localDay = day.isUtc ? day.toLocal() : day;
+    final dayKey = DateTime(localDay.year, localDay.month, localDay.day);
+    final records = _calendarByDate[dayKey] ?? [];
+    if (records.isEmpty) {
+      return DayTimelineView(
+        day: dayKey,
+        data: null,
+        isLoading: false,
+        translation: translation,
+      );
+    }
+    final breakRepo = context.read<BreakRecordRepository>();
+    return FutureBuilder<DayViewData>(
+      future: _getTimeBlocksWithExactBreaks(dayKey, records, breakRepo),
+      builder: (context, snapshot) {
+        return DayTimelineView(
+          day: dayKey,
+          data: snapshot.data,
+          isLoading: snapshot.connectionState == ConnectionState.waiting &&
+              snapshot.data == null,
+          translation: translation,
+        );
+      },
+    );
   }
 
   static DateTime _toLocal(DateTime? d) {
@@ -553,10 +565,23 @@ class _AttendanceCalendarDetailScreenState
     );
     final dayEnd = dayStart.add(const Duration(days: 1));
     final now = DateTime.now();
+
+    /// Seconds from midnight for positioning; use time-of-day to avoid timezone shift (e.g. 8:52 stays 8:52).
+    int _secondsFromMidnight(DateTime dt) {
+      if (dt.year == localDay.year &&
+          dt.month == localDay.month &&
+          dt.day == localDay.day) {
+        return dt.hour * 3600 + dt.minute * 60 + dt.second;
+      }
+      return dt.difference(dayStart).inSeconds;
+    }
     final sorted = List<AttendanceEntity>.from(records)
       ..sort((a, b) => a.checkInAt.compareTo(b.checkInAt));
     final blocks = <TimeBlock>[];
     final details = <DayDetailEntry>[];
+    // Cap is per day across all sessions: first 8h = Work, rest = OT.
+    int workedSoFar = 0;
+    const normalWorkCap = AppConstants.expectedWorkSecondsPerDay ~/ 60;
 
     for (final a in sorted) {
       final checkIn = _checkInLocal(a);
@@ -614,10 +639,9 @@ class _AttendanceCalendarDetailScreenState
         _formatTimeExact(checkIn),
         a.checkInAddress,
       );
-      final checkOutStr = _detailStr(
-        _formatTimeExact(checkOut),
-        a.checkOutAddress,
-      );
+      // Label so "12:00 AM" on last block is clearly check-out time, not block position.
+      final checkOutLabeledStr =
+          '${translation.of('analytics.check_out')}: ${_formatTimeExact(checkOut)}${a.checkOutAddress != null && a.checkOutAddress!.trim().isNotEmpty ? ' · ${a.checkOutAddress}' : ''}';
 
       final breaks = breaksWithTimes.map((t) => (t.$1, t.$2)).toList();
       final workStarts = <DateTime>[];
@@ -635,8 +659,6 @@ class _AttendanceCalendarDetailScreenState
         workEnds.add(sessionEnd);
       }
 
-      int workedSoFar = 0;
-      const normalWorkCap = AppConstants.expectedWorkSecondsPerDay ~/ 60;
       var workBlockCount = 0;
 
       for (int i = 0; i < workStarts.length; i++) {
@@ -645,7 +667,7 @@ class _AttendanceCalendarDetailScreenState
         int segMins = segEnd.difference(segStart).inMinutes;
         if (segMins <= 0) continue;
 
-        final startSeconds = segStart.difference(dayStart).inSeconds;
+        final startSeconds = _secondsFromMidnight(segStart);
         final remainingNormal = normalWorkCap - workedSoFar;
         final isLastSegment = i == workStarts.length - 1;
         if (remainingNormal > 0) {
@@ -655,8 +677,8 @@ class _AttendanceCalendarDetailScreenState
           String? workDetail = workBlockCount == 0 ? checkInStr : null;
           if (isLastSegment && segMins <= workMins) {
             workDetail = workDetail != null
-                ? '$workDetail\n$checkOutStr'
-                : checkOutStr;
+                ? '$workDetail\n$checkOutLabeledStr'
+                : checkOutLabeledStr;
           }
           blocks.add(
             TimeBlock(
@@ -671,25 +693,41 @@ class _AttendanceCalendarDetailScreenState
           workedSoFar += workMins;
           segMins -= workMins;
           if (segMins > 0) {
+            final otStartSeconds = startSeconds + (workMins * 60);
+            final otDurationSeconds = segMins * 60;
+            final otStartStr = _formatTimeExact(
+              dayStart.add(Duration(seconds: otStartSeconds)),
+            );
+            final otDetailText = isLastSegment
+                ? '$otStartStr – $checkOutLabeledStr'
+                : '$otStartStr – ${_formatTimeExact(dayStart.add(Duration(seconds: otStartSeconds + otDurationSeconds)))}';
             blocks.add(
               TimeBlock(
                 label: translation.of('analytics.ot'),
-                startSeconds: startSeconds + (workMins * 60),
-                durationSeconds: segMins * 60,
+                startSeconds: otStartSeconds,
+                durationSeconds: otDurationSeconds,
                 isOt: true,
-                detailText: isLastSegment ? checkOutStr : null,
+                detailText: otDetailText,
               ),
             );
             workBlockCount++;
           }
         } else {
+          final otStartSeconds = startSeconds;
+          final otDurationSeconds = segMins * 60;
+          final otStartStr = _formatTimeExact(
+            dayStart.add(Duration(seconds: otStartSeconds)),
+          );
+          final otDetailText = isLastSegment
+              ? '$otStartStr – $checkOutLabeledStr'
+              : '$otStartStr – ${_formatTimeExact(dayStart.add(Duration(seconds: otStartSeconds + otDurationSeconds)))}';
           blocks.add(
             TimeBlock(
               label: translation.of('analytics.ot'),
-              startSeconds: startSeconds,
-              durationSeconds: segMins * 60,
+              startSeconds: otStartSeconds,
+              durationSeconds: otDurationSeconds,
               isOt: true,
-              detailText: isLastSegment ? checkOutStr : null,
+              detailText: otDetailText,
             ),
           );
           workBlockCount++;
@@ -705,7 +743,7 @@ class _AttendanceCalendarDetailScreenState
         final durationSeconds = end.difference(start).inSeconds;
         if (durationSeconds <= 0) continue;
         final timeRange =
-            '${_formatTimeExact(bStart)}  ${_formatTimeExact(bEnd)}';
+            '${_formatTimeExact(bStart)} – ${_formatTimeExact(bEnd)}';
         final breakDetail = _detailStr(
           timeRange,
           b.startAddress ?? b.endAddress,
@@ -713,7 +751,7 @@ class _AttendanceCalendarDetailScreenState
         blocks.add(
           TimeBlock(
             label: translation.of('analytics.break'),
-            startSeconds: start.difference(dayStart).inSeconds,
+            startSeconds: _secondsFromMidnight(start),
             durationSeconds: durationSeconds,
             isBreak: true,
             detailText: breakDetail,
@@ -724,276 +762,6 @@ class _AttendanceCalendarDetailScreenState
 
     blocks.sort((a, b) => a.startSeconds.compareTo(b.startSeconds));
     return DayViewData(blocks: blocks, details: details);
-  }
-
-  Widget _buildHourlyDayView(ThemeData theme, DateTime day) {
-    final localDay = day.isUtc ? day.toLocal() : day;
-    final dayKey = DateTime(localDay.year, localDay.month, localDay.day);
-    final records = _calendarByDate[dayKey] ?? [];
-    if (records.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: theme.colorScheme.outline.withValues(alpha: 0.2),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.shadow.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppDateTimeFormat.formatDate(dayKey),
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              translation.of('analytics.no_attendance_day'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final breakRepo = context.read<BreakRecordRepository>();
-
-    return FutureBuilder<DayViewData>(
-      future: _getTimeBlocksWithExactBreaks(dayKey, records, breakRepo),
-      builder: (context, snapshot) {
-        final data = snapshot.data;
-        final blocks = data?.blocks ?? [];
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            data == null) {
-          return Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      AppDateTimeFormat.formatDate(dayKey),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      translation.of('analytics.loading_schedule'),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-
-        final hourCount = _dayViewEndHour - _dayViewStartHour;
-        final totalHeight = hourCount * _hourRowHeight;
-        const totalSeconds = 24 * 3600;
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.2),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.shadow.withValues(alpha: 0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  AppDateTimeFormat.formatDate(dayKey),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 44,
-                    child: Column(
-                      children: List.generate(hourCount, (i) {
-                        final hour = _dayViewStartHour + i;
-                        return SizedBox(
-                          height: _hourRowHeight,
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Text(
-                              LocaleDigits.format(_hourLabel(hour)),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SizedBox(
-                      height: totalHeight,
-                      child: Stack(
-                        children: [
-                          ...List.generate(
-                            hourCount - 1,
-                            (i) => Positioned(
-                              left: 0,
-                              right: 0,
-                              top: (i + 1) * _hourRowHeight - 1,
-                              height: 1,
-                              child: Container(
-                                color: theme.colorScheme.outline.withValues(
-                                  alpha: 0.15,
-                                ),
-                              ),
-                            ),
-                          ),
-                          ...blocks.map((b) {
-                            final top =
-                                (b.startSeconds / totalSeconds) * totalHeight +
-                                40;
-                            final height =
-                                (b.durationSeconds / totalSeconds) *
-                                totalHeight;
-                            final hasDetail =
-                                b.detailText != null &&
-                                b.detailText!.trim().isNotEmpty;
-                            const minBlockNoDetail = 36.0;
-                            const minBlockWithDetail = 56.0;
-                            final blockHeight =
-                                height <
-                                        (hasDetail
-                                            ? minBlockWithDetail
-                                            : minBlockNoDetail) &&
-                                    b.durationSeconds > 0
-                                ? (hasDetail
-                                      ? minBlockWithDetail
-                                      : minBlockNoDetail)
-                                : height;
-                            Color bg;
-                            if (b.isBreak) {
-                              bg = Colors.orange;
-                            } else if (b.isOt) {
-                              bg = theme.colorScheme.tertiary;
-                            } else {
-                              bg = theme.colorScheme.primary;
-                            }
-                            return Positioned(
-                              left: 0,
-                              right: 0,
-                              top: top,
-                              height: blockHeight,
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 4),
-                                decoration: BoxDecoration(
-                                  color: bg,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                alignment: Alignment.centerLeft,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      b.label,
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 10,
-                                          ),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                    if (hasDetail)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 2),
-                                        child: Text(
-                                          b.detailText ?? '',
-                                          style: theme.textTheme.labelSmall
-                                              ?.copyWith(
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.95,
-                                                ),
-                                                fontSize: 9,
-                                                height: 1.2,
-                                                fontWeight: FontWeight.w400,
-                                              ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   Widget _buildLegend(ThemeData theme) {

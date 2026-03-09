@@ -16,6 +16,7 @@ class EmployeeEntity with _$EmployeeEntity {
     String? profilePhotoUrl,
     DateTime? joinDate,
     String? reportingManagerId,
+    // ignore: invalid_annotation_target
     @JsonKey(includeFromJson: false, includeToJson: false) 
     EmployeeEntity? reportingManager,
     @Default(false) bool isOnline,

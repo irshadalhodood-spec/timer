@@ -21,20 +21,23 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   Future<AttendanceEntity?> getOpenAttendance(String userId) =>
       _local.getOpenAttendance(userId);
 
+  /// Local-first: always reads from local DB. Use [refreshAttendanceHistoryFromApi] to sync from REST API.
   @override
-  Future<List<AttendanceEntity>> getAttendancesByUser(String userId, {DateTime? from, DateTime? to}) async {
-    if (_api != null && from != null && to != null) {
-      final response = await _api.getAttendanceHistory(
-        userId: userId,
-        from: from,
-        to: to,
-      );
-      if (response.success && response.data != null) {
-        return response.data!;
-      }
-      throw Exception(response.message ?? 'Failed to load attendance history');
+  Future<List<AttendanceEntity>> getAttendancesByUser(String userId, {DateTime? from, DateTime? to}) =>
+      _local.getAttendancesByUser(userId, from: from, to: to);
+
+  /// Fetches from REST API and merges into local DB (API layer writes to local). No-op if API is null.
+  @override
+  Future<void> refreshAttendanceHistoryFromApi(String userId, DateTime from, DateTime to) async {
+    if (_api == null) return;
+    final response = await _api.getAttendanceHistory(
+      userId: userId,
+      from: from,
+      to: to,
+    );
+    if (!response.success) {
+      throw Exception(response.message ?? 'Failed to refresh attendance from API');
     }
-    return _local.getAttendancesByUser(userId, from: from, to: to);
   }
 
   @override

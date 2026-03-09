@@ -37,7 +37,14 @@ object AttendanceNotificationHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) return
+            ) {
+                // Service must call startForeground() within time limit; use minimal notification
+                if (fromService && context is Service) {
+                    ensureChannel(context)
+                    (context as Service).startForeground(NOTIFICATION_ID, buildMinimalNotification(context))
+                }
+                return
+            }
         }
 
         ensureChannel(context)
@@ -139,6 +146,23 @@ object AttendanceNotificationHelper {
                 NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
             }
         }
+    }
+
+    /** Call from Service.onStartCommand() immediately so startForeground() runs within Android's time limit. */
+    fun startForegroundWithMinimalNotification(service: Service) {
+        ensureChannel(service)
+        service.startForeground(NOTIFICATION_ID, buildMinimalNotification(service))
+    }
+
+    /** Minimal notification so the foreground service can call startForeground() in time even if full notification is not shown. */
+    private fun buildMinimalNotification(context: Context): android.app.Notification {
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_menu_my_calendar)
+            .setContentTitle(context.getString(R.string.notification_channel_attendance))
+            .setContentText("")
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
     }
 
     private fun ensureChannel(context: Context) {

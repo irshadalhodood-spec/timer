@@ -45,7 +45,7 @@ Future<void> main() async {
   runApp(
     RestartWidget(
       child: DevicePreview(
-        enabled: true,
+        enabled: false,
         builder: (context) => buildAppProviders(child: const EmployeeTrack())),
     ),
   );

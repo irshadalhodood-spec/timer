@@ -52,86 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _handleNotificationAction(String action) {
-    if (!mounted) return;
-    switch (action) {
-      case 'checkOut':
-        _fetchGeoAndCheckOut(context);
-        break;
-      case 'startBreak':
-        context.read<AttendanceBloc>().add(const AttendanceBreakStartRequested());
-        break;
-      case 'endBreak':
-        context.read<AttendanceBloc>().add(const AttendanceBreakEndRequested());
-        break;
-    }
-  }
-
-  void _updateAttendanceNotification(AttendanceStateCheckedIn state) {
-    final now = DateTime.now();
-    final checkInAt = state.attendance.checkInAt;
-    int workedSeconds = 0;
-    for (final session in state.todaySessions) {
-      if (session.id == state.attendance.id) {
-        workedSeconds += (now.difference(session.checkInAt).inSeconds - state.breakSeconds).clamp(0, 999999);
-      } else if (session.checkOutAt != null) {
-        workedSeconds += (session.checkOutAt!.difference(session.checkInAt).inSeconds - session.breakSeconds).clamp(0, 999999);
-      }
-    }
-    final isOnBreak = state.breaks.any((b) => b.endAt == null);
-    // Break segments as offsets from check-in so the notification can draw them on the full work timeline
-    final breakSegments = <Map<String, int>>[];
-    for (final b in state.breaks) {
-      final startSeconds = b.startAt.difference(checkInAt).inSeconds.clamp(0, 999999);
-      final endSeconds = (b.endAt ?? now).difference(checkInAt).inSeconds.clamp(0, 999999);
-      if (endSeconds > startSeconds) {
-        breakSegments.add({'startSeconds': startSeconds, 'endSeconds': endSeconds});
-      }
-    }
-    breakSegments.sort((a, b) => (a['startSeconds'] ?? 0).compareTo(b['startSeconds'] ?? 0));
-    context.read<AttendanceNotificationService>().showAttendanceNotification(
-      checkInAtIso: state.attendance.checkInAt.toIso8601String(),
-      breakSeconds: state.breakSeconds,
-      workedSeconds: workedSeconds,
-      isOnBreak: isOnBreak,
-      expectedWorkSeconds: AppConstants.expectedWorkSecondsPerDay,
-      breakSegments: breakSegments,
-    );
-  }
-
-  void _startNotificationTimer() {
-    _notificationUpdateTimer?.cancel();
-    _notificationUpdateTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      if (!mounted) return;
-      final state = context.read<AttendanceBloc>().state;
-      AttendanceStateCheckedIn? checkedIn;
-      if (state is AttendanceStateCheckedIn) {
-        checkedIn = state;
-      } else if (state is AttendanceStateHistoryLoaded && state.todayAttendance != null) {
-        checkedIn = AttendanceStateCheckedIn(
-          state.todayAttendance!,
-          state.todayBreaks,
-          state.todayBreakSeconds,
-          state.todaySessions,
-        );
-      } else if (state is AttendanceStateHistoryLoading && state.todayAttendance != null) {
-        checkedIn = AttendanceStateCheckedIn(
-          state.todayAttendance!,
-          state.todayBreaks,
-          state.todayBreakSeconds,
-          state.todaySessions,
-        );
-      }
-      if (checkedIn != null) _updateAttendanceNotification(checkedIn);
-    });
-  }
-
-  void _cancelNotificationTimer() {
-    _notificationUpdateTimer?.cancel();
-    _notificationUpdateTimer = null;
-  }
-
-  @override
+    @override
   Widget build(BuildContext context) {
     return BlocConsumer<AttendanceBloc, AttendanceState>(
       listener: (context, state) {
@@ -307,6 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final geo = await context.read<GeoService>().getCurrentLocationWithAddress();
       if (!mounted) return;
+      // ignore: use_build_context_synchronously
       context.read<AttendanceBloc>().add(AttendanceCheckInRequested(
             lat: geo?.latitude,
             lng: geo?.longitude,
@@ -354,6 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (note == null) return; 
       setState(() => _isSubmittingLocation = true);
       try {
+        // ignore: use_build_context_synchronously
         final geo = await context.read<GeoService>().getCurrentLocationWithAddress();
         if (!mounted) return;
         bloc.add(AttendanceCheckOutRequested(
@@ -695,5 +618,86 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+void _handleNotificationAction(String action) {
+    if (!mounted) return;
+    switch (action) {
+      case 'checkOut':
+        _fetchGeoAndCheckOut(context);
+        break;
+      case 'startBreak':
+        context.read<AttendanceBloc>().add(const AttendanceBreakStartRequested());
+        break;
+      case 'endBreak':
+        context.read<AttendanceBloc>().add(const AttendanceBreakEndRequested());
+        break;
+    }
+  }
+
+  void _updateAttendanceNotification(AttendanceStateCheckedIn state) {
+    final now = DateTime.now();
+    final checkInAt = state.attendance.checkInAt;
+    int workedSeconds = 0;
+    for (final session in state.todaySessions) {
+      if (session.id == state.attendance.id) {
+        workedSeconds += (now.difference(session.checkInAt).inSeconds - state.breakSeconds).clamp(0, 999999);
+      } else if (session.checkOutAt != null) {
+        workedSeconds += (session.checkOutAt!.difference(session.checkInAt).inSeconds - session.breakSeconds).clamp(0, 999999);
+      }
+    }
+    final isOnBreak = state.breaks.any((b) => b.endAt == null);
+    // Break segments as offsets from check-in so the notification can draw them on the full work timeline
+    final breakSegments = <Map<String, int>>[];
+    for (final b in state.breaks) {
+      final startSeconds = b.startAt.difference(checkInAt).inSeconds.clamp(0, 999999);
+      final endSeconds = (b.endAt ?? now).difference(checkInAt).inSeconds.clamp(0, 999999);
+      if (endSeconds > startSeconds) {
+        breakSegments.add({'startSeconds': startSeconds, 'endSeconds': endSeconds});
+      }
+    }
+    breakSegments.sort((a, b) => (a['startSeconds'] ?? 0).compareTo(b['startSeconds'] ?? 0));
+    context.read<AttendanceNotificationService>().showAttendanceNotification(
+      checkInAtIso: state.attendance.checkInAt.toIso8601String(),
+      breakSeconds: state.breakSeconds,
+      workedSeconds: workedSeconds,
+      isOnBreak: isOnBreak,
+      expectedWorkSeconds: AppConstants.expectedWorkSecondsPerDay,
+      breakSegments: breakSegments,
+    );
+  }
+
+  void _startNotificationTimer() {
+    _notificationUpdateTimer?.cancel();
+    _notificationUpdateTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+      if (!mounted) return;
+      final state = context.read<AttendanceBloc>().state;
+      AttendanceStateCheckedIn? checkedIn;
+      if (state is AttendanceStateCheckedIn) {
+        checkedIn = state;
+      } else if (state is AttendanceStateHistoryLoaded && state.todayAttendance != null) {
+        checkedIn = AttendanceStateCheckedIn(
+          state.todayAttendance!,
+          state.todayBreaks,
+          state.todayBreakSeconds,
+          state.todaySessions,
+        );
+      } else if (state is AttendanceStateHistoryLoading && state.todayAttendance != null) {
+        checkedIn = AttendanceStateCheckedIn(
+          state.todayAttendance!,
+          state.todayBreaks,
+          state.todayBreakSeconds,
+          state.todaySessions,
+        );
+      }
+      if (checkedIn != null) _updateAttendanceNotification(checkedIn);
+    });
+  }
+
+  void _cancelNotificationTimer() {
+    _notificationUpdateTimer?.cancel();
+    _notificationUpdateTimer = null;
+  }
+
+
 }
 

@@ -1,4 +1,3 @@
-
 import 'package:employee_track/base_module/presentation/components/num_dropdown/custom_dropdown.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,15 +5,11 @@ import 'package:flutter/material.dart';
 import '../../core/values/color_scheme.dart';
 
 Widget vSpace(double h) {
-  return SizedBox(
-    height: h,
-  );
+  return SizedBox(height: h);
 }
 
 Widget wSpace(double w) {
-  return SizedBox(
-    width: w,
-  );
+  return SizedBox(width: w);
 }
 
 String selectedDropdownValue = "10";
@@ -24,12 +19,15 @@ Widget tableHeading({required String heading}) {
     children: [
       Expanded(
         child: Container(
-            color: AppColorScheme.primary,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-              child: Text(heading,
-                  style: const TextStyle(color: Colors.white, fontSize: 14)),
-            )),
+          color: AppColorScheme.primary,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+            child: Text(
+              heading,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+          ),
+        ),
       ),
     ],
   );
@@ -39,13 +37,12 @@ Widget searchBar({void Function(String)? onChanged, required double size}) {
   return Row(
     children: [
       Expanded(
-          child: Container(
-        color: const Color(0xffE2E2E2),
-        child: Padding(
+        child: Container(
+          color: const Color(0xffE2E2E2),
+          child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
             child: Row(
               children: [
-                
                 // const Text("Search",
                 //     style: TextStyle(
                 //       color: Colors.black,
@@ -57,24 +54,26 @@ Widget searchBar({void Function(String)? onChanged, required double size}) {
                   height: 35,
                   width: 290,
                   child: TextField(
-                    
-                    
                     decoration: InputDecoration(
                       hintText: "Search",
-                      prefixIcon: const Icon(
-                        CupertinoIcons.search
-                      ),
+                      prefixIcon: const Icon(CupertinoIcons.search),
                       border: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(width: 0.5, color: Colors.grey.shade600),
+                        borderSide: BorderSide(
+                          width: 0.5,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       enabledBorder: const OutlineInputBorder(
-                        borderSide:
-                            BorderSide(width: .5, color: Color(0xffA0A0A0)),
+                        borderSide: BorderSide(
+                          width: .5,
+                          color: Color(0xffA0A0A0),
+                        ),
                       ),
                       focusedBorder: const OutlineInputBorder(
-                        borderSide:
-                            BorderSide(width: .5, color: Color(0xFF091057)),
+                        borderSide: BorderSide(
+                          width: .5,
+                          color: Color(0xFF091057),
+                        ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 5),
                       filled: true,
@@ -83,44 +82,56 @@ Widget searchBar({void Function(String)? onChanged, required double size}) {
                     textAlign: TextAlign.left,
                     keyboardType: TextInputType.multiline,
                     style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 13,
-                        textBaseline: TextBaseline.alphabetic,
-                        fontWeight: FontWeight.w400),
+                      color: Colors.black,
+                      fontSize: 13,
+                      textBaseline: TextBaseline.alphabetic,
+                      fontWeight: FontWeight.w400,
+                    ),
                     onChanged: onChanged,
                   ),
                 ),
-
 
                 Expanded(
                   flex: 7,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      const Text("Display",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w400,
-                          )),
+                      const Text(
+                        "Display",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
                       wSpace(6),
                       SizedBox(
-                          width: 65,
-                          height: 22,
-                          child: CustomDropdownMenu(
-                              selVal: "10", list: const ["10", "20", "30"])),
+                        width: 65,
+                        height: 22,
+                        child: CustomDropdownMenu(
+                          selVal: "10",
+                          list: const ["10", "20", "30"],
+                        ),
+                      ),
                       wSpace(6),
                       size > 600
-                          ? const Text("records",
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w400),)
+                          ? const Text(
+                              "records",
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            )
                           : Container(),
                     ],
                   ),
                 ),
               ],
-            )),
-      )),
+            ),
+          ),
+        ),
+      ),
     ],
   );
 }
@@ -128,18 +139,21 @@ Widget searchBar({void Function(String)? onChanged, required double size}) {
 class TableColumn extends StatelessWidget {
   const TableColumn(
     this.text, {
-    Key? key,
+    super.key,
     this.heading = false,
     this.index,
     this.width,
     this.onTap,
     this.colorbool = false,
     this.textTrim = false,
-  })  : assert(!heading || index == null,
-            'If heading is true, index must be null'),
-        assert(
-            heading || index != null, 'If heading is false, index is required'),
-        super(key: key);
+  }) : assert(
+         !heading || index == null,
+         'If heading is true, index must be null',
+       ),
+       assert(
+         heading || index != null,
+         'If heading is false, index is required',
+       );
 
   final String text;
   final bool heading;
@@ -159,51 +173,48 @@ class TableColumn extends StatelessWidget {
         height: size.height,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.all(4.0),
-        constraints: BoxConstraints(
-          minWidth: width ?? 0,
-        ),
+        constraints: BoxConstraints(minWidth: width ?? 0),
         color: heading
             ? const Color(0xffF6F6F6)
             : (index! % 2 != 0)
-                ? const Color(0xffF6F6F6)
-                : Colors.white,
+            ? const Color(0xffF6F6F6)
+            : Colors.white,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             !textTrim
                 ? Padding(
-                  padding: const EdgeInsets.only(left: 3.0),
-                  child: SelectableText(
-                      text,textAlign: TextAlign.justify,
+                    padding: const EdgeInsets.only(left: 3.0),
+                    child: SelectableText(
+                      text,
+                      textAlign: TextAlign.justify,
                       style: TextStyle(
-                        color:
-                            colorbool ? Colors.blueAccent : Colors.black,
+                        color: colorbool ? Colors.blueAccent : Colors.black,
                         fontSize: 13,
                         overflow: TextOverflow.ellipsis,
-                        fontWeight:
-                            !heading ? FontWeight.normal : FontWeight.bold,
+                        fontWeight: !heading
+                            ? FontWeight.normal
+                            : FontWeight.bold,
                         fontFamily: 'Roboto',
                       ),
                       maxLines: 1,
                       // overflow: TextOverflow.ellipsis,
                     ),
-                )
+                  )
                 : Container(
                     constraints: const BoxConstraints(maxWidth: 255),
                     child: Padding(
                       padding: const EdgeInsets.only(left: 3.0),
                       child: SelectableText(
                         text,
-                        
-                        
+
                         style: TextStyle(
-                          color: colorbool
-                              ? Colors.blueAccent
-                              : Colors.black87,
+                          color: colorbool ? Colors.blueAccent : Colors.black87,
                           fontSize: 13,
-                          fontWeight:
-                              !heading ? FontWeight.normal : FontWeight.bold,
+                          fontWeight: !heading
+                              ? FontWeight.normal
+                              : FontWeight.bold,
                           fontFamily: 'Roboto',
                         ),
                         maxLines: 10,

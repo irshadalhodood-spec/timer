@@ -38,6 +38,7 @@ dependencies:
   local_auth: ^2.2.0
   iconsax: ^0.0.8
   device_preview: ^1.2.0
+  bloc: ^9.2.0
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +59,7 @@ flutter:
     - lib/attendance_module/presentation/core/assets/lang/
     - lib/organization_module/presentation/core/assets/lang/
     - lib/employee_track/presentation/core/assets/lang/
+    - lib/base_module/presentation/core/assets/lottie/
 
   fonts:
     

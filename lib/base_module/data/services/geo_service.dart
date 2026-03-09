@@ -16,7 +16,7 @@ class GeoService {
     if (permission == LocationPermission.deniedForever) return null;
 
     final position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.best),
     );
 
     final placemarks = await placemarkFromCoordinates(
