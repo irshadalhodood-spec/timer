@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'app_providers.dart';
+import 'base_module/data/network/api_client.dart';
 import 'base_module/domain/entities/app_theme_singleton.dart';
 import 'base_module/domain/entities/translation.dart';
 import 'base_module/presentation/core/values/app_constants.dart';
@@ -36,7 +37,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = CustomHttpOverrides();
   Bloc.observer = SimpleBlocObserver();
-  // SyncfusionFlutter.init(); 
 
   await initializeDateFormatting();
   await appTheme.init();
@@ -128,9 +128,10 @@ class _EmployeeTrackState extends State<EmployeeTrack> {
                       '/home': (ctx) {
                         final authState = ctx.read<AuthBloc>().state;
                         if (authState is AuthStateAuthenticated) {
+                          // ctx.read<ApiClient>().setAccessToken(authState.session.accessToken);
                           return buildDashboardProviders(
                             context: ctx,
-                            userId: authState.session.user.id,
+                            userId: authState.session.user.userId,
                             child: const MainScreen(),
                           );
                         }

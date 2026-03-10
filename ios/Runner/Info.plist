@@ -49,5 +49,7 @@
 	<string>This app uses your location to record check-in and check-out addresses for attendance.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app uses your location to record check-in and check-out addresses for attendance.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app uses the camera to scan QR codes for the organization invite URL.</string>
 </dict>
 </plist>

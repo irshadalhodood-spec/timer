@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../domain/entites/auth_session_entity.dart';
@@ -44,15 +45,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onAuthLoginRequested(AuthLoginRequested event, Emitter<AuthState> emit) async {
+    if (event.username.trim().isEmpty) {
+      emit(AuthState.failure('Username is required'));
+      return;
+    }
     emit(AuthState.loading);
     try {
-    
-      final session = await _auth.login(event.username, event.password);
+      debugPrint("USERLOGINS REQUESTED BLOC");
+      final session = await _auth.login(event.username.trim(), event.password);
+      debugPrint("USERLOGINS REQUESTED BLOC:-  --  ${event.username} -- ${event.password}");
       if (session != null) {
         emit(AuthState.authenticated(session));
       } else {
         emit(AuthState.failure('Invalid credentials'));
       }
+    } on Exception catch (e) {
+      final message = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+      emit(AuthState.failure(message.isEmpty ? 'Login failed' : message));
     } catch (e) {
       emit(AuthState.failure(e.toString()));
     }

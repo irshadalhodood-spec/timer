@@ -8,7 +8,7 @@ part of 'user_entity.dart';
 
 _$UserEntityImpl _$$UserEntityImplFromJson(Map<String, dynamic> json) =>
     _$UserEntityImpl(
-      id: json['id'] as String,
+      userId: json['user_id'] as String,
       username: json['username'] as String,
       email: json['email'] as String?,
       phone: json['phone'] as String?,
@@ -21,11 +21,12 @@ _$UserEntityImpl _$$UserEntityImplFromJson(Map<String, dynamic> json) =>
       joinDate: json['joinDate'] == null
           ? null
           : DateTime.parse(json['joinDate'] as String),
+      adminUser: json['admin_user'] as bool?,
     );
 
 Map<String, dynamic> _$$UserEntityImplToJson(_$UserEntityImpl instance) =>
     <String, dynamic>{
-      'id': instance.id,
+      'user_id': instance.userId,
       'username': instance.username,
       'email': instance.email,
       'phone': instance.phone,
@@ -36,4 +37,5 @@ Map<String, dynamic> _$$UserEntityImplToJson(_$UserEntityImpl instance) =>
       'departmentName': instance.departmentName,
       'reportingManagerId': instance.reportingManagerId,
       'joinDate': instance.joinDate?.toIso8601String(),
+      'admin_user': instance.adminUser,
     };

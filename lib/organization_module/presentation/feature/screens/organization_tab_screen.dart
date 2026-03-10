@@ -35,12 +35,13 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
     if (authState is! AuthStateAuthenticated) {
       return const Center(child: Text('Not authenticated'));
     }
-    final orgId = authState.session.organizationId ?? 'demo-org-xyz';
+    // final orgId = authState.session.organizationId ?? 'demo-org-xyz';
 
    
     return BlocProvider(
       create: (context) => OrganizationTabCubit(
-        orgId: orgId,
+        orgId: "",
+        // orgId: orgId,
         api: context.read<OrganizationApi>(),
         orgRepo: context.read<OrganizationRepository>(),
         empRepo: context.read<EmployeeRepository>(),
@@ -505,9 +506,11 @@ class _OrganizationTabScreenState extends State<OrganizationTabScreen> {
       child: InkWell(
         onTap: () {
           final authState = context.read<AuthBloc>().state;
-          final orgId = authState is AuthStateAuthenticated
-              ? (authState.session.organizationId ?? 'demo-org-xyz')
-              : 'demo-org-xyz';
+          final orgId = 
+          // authState is AuthStateAuthenticated
+          //     ? (authState.session.organizationId ?? 'demo-org-xyz')
+          //     : 
+              'demo-org-xyz';
           void pushManagerProfile(EmployeeEntity manager) {
             Navigator.pushReplacement(
               context,

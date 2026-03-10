@@ -39,6 +39,7 @@ dependencies:
   iconsax: ^0.0.8
   device_preview: ^1.2.0
   bloc: ^9.2.0
+  mobile_scanner: ^7.2.0
 
 dev_dependencies:
   flutter_test:

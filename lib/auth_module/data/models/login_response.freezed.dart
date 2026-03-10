@@ -23,6 +23,7 @@ LoginResponse _$LoginResponseFromJson(Map<String, dynamic> json) {
 mixin _$LoginResponse {
   String get accessToken => throw _privateConstructorUsedError;
   String? get refreshToken => throw _privateConstructorUsedError;
+  @JsonKey(name: 'data')
   UserEntity get user => throw _privateConstructorUsedError;
   String? get organizationId => throw _privateConstructorUsedError;
   DateTime? get expiresAt => throw _privateConstructorUsedError;
@@ -47,7 +48,7 @@ abstract class $LoginResponseCopyWith<$Res> {
   $Res call({
     String accessToken,
     String? refreshToken,
-    UserEntity user,
+    @JsonKey(name: 'data') UserEntity user,
     String? organizationId,
     DateTime? expiresAt,
   });
@@ -126,7 +127,7 @@ abstract class _$$LoginResponseImplCopyWith<$Res>
   $Res call({
     String accessToken,
     String? refreshToken,
-    UserEntity user,
+    @JsonKey(name: 'data') UserEntity user,
     String? organizationId,
     DateTime? expiresAt,
   });
@@ -188,7 +189,7 @@ class _$LoginResponseImpl implements _LoginResponse {
   const _$LoginResponseImpl({
     required this.accessToken,
     this.refreshToken,
-    required this.user,
+    @JsonKey(name: 'data') required this.user,
     this.organizationId,
     this.expiresAt,
   });
@@ -201,6 +202,7 @@ class _$LoginResponseImpl implements _LoginResponse {
   @override
   final String? refreshToken;
   @override
+  @JsonKey(name: 'data')
   final UserEntity user;
   @override
   final String? organizationId;
@@ -257,7 +259,7 @@ abstract class _LoginResponse implements LoginResponse {
   const factory _LoginResponse({
     required final String accessToken,
     final String? refreshToken,
-    required final UserEntity user,
+    @JsonKey(name: 'data') required final UserEntity user,
     final String? organizationId,
     final DateTime? expiresAt,
   }) = _$LoginResponseImpl;
@@ -270,6 +272,7 @@ abstract class _LoginResponse implements LoginResponse {
   @override
   String? get refreshToken;
   @override
+  @JsonKey(name: 'data')
   UserEntity get user;
   @override
   String? get organizationId;

@@ -20,6 +20,8 @@
     "paste_invite_url": "Paste or scan your one-time invite URL to bind your account to the organization.",
     "invite_organization_url": "Invite your organization Invite URL",
     "invite_url_hint": "Invite URL",
+    "scan_url": "Scan",
+    "scan_url_hint": "Point camera at QR code",
     "paste_or_scan_url": "Paste or Scan URL",
     "or": "or",
     "and": "and",

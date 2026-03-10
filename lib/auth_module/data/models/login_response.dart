@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'user_entity.dart';
+import '../../domain/entites/user_entity.dart';
 
 part 'login_response.freezed.dart';
 part 'login_response.g.dart';
@@ -10,7 +10,7 @@ class LoginResponse with _$LoginResponse {
   const factory LoginResponse({
     required String accessToken,
     String? refreshToken,
-    required UserEntity user,
+    @JsonKey(name: 'data') required UserEntity user,
     String? organizationId,
     DateTime? expiresAt,
   }) = _LoginResponse;

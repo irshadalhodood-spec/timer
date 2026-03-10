@@ -30,7 +30,8 @@ mixin _$EmployeeEntity {
   String? get phone => throw _privateConstructorUsedError;
   String? get profilePhotoUrl => throw _privateConstructorUsedError;
   DateTime? get joinDate => throw _privateConstructorUsedError;
-  String? get reportingManagerId => throw _privateConstructorUsedError;
+  String? get reportingManagerId =>
+      throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(includeFromJson: false, includeToJson: false)
   EmployeeEntity? get reportingManager => throw _privateConstructorUsedError;
   bool get isOnline => throw _privateConstructorUsedError;
@@ -322,6 +323,7 @@ class _$EmployeeEntityImpl implements _EmployeeEntity {
   final DateTime? joinDate;
   @override
   final String? reportingManagerId;
+  // ignore: invalid_annotation_target
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final EmployeeEntity? reportingManager;
@@ -436,7 +438,7 @@ abstract class _EmployeeEntity implements EmployeeEntity {
   @override
   DateTime? get joinDate;
   @override
-  String? get reportingManagerId;
+  String? get reportingManagerId; // ignore: invalid_annotation_target
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   EmployeeEntity? get reportingManager;

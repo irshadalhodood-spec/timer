@@ -20,6 +20,8 @@
     "paste_invite_url": "الصق أو امسح رابط الدعوة لربط حسابك بالمنظمة.",
     "invite_organization_url": "رابط دعوة منظمتك",
     "invite_url_hint": "رابط الدعوة",
+    "scan_url": "مسح",
+    "scan_url_hint": "وجّه الكاميرا نحو رمز QR",
     "paste_or_scan_url": "الصق أو امسح الرابط",
     "or": "أو",
     "and": "و",

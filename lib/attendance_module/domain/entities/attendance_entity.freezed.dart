@@ -469,7 +469,7 @@ class _$AttendanceEntityImpl implements _AttendanceEntity {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     userId,
@@ -490,7 +490,7 @@ class _$AttendanceEntityImpl implements _AttendanceEntity {
     syncedAt,
     createdAt,
     updatedAt,
-  );
+  ]);
 
   /// Create a copy of AttendanceEntity
   /// with the given fields replaced by the non-null parameter values.

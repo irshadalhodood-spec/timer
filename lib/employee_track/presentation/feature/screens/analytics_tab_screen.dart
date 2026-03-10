@@ -66,7 +66,7 @@ class _AnalyticsTabScreenState extends State<AnalyticsTabScreen> {
   Widget build(BuildContext context) {
     final authState = context.read<AuthBloc>().state;
     final userId = authState is AuthStateAuthenticated
-        ? authState.session.user.id
+        ? authState.session.user.userId
         : '';
     return BlocProvider<MonthlyScoreCubit>(
       create: (_) => MonthlyScoreCubit(

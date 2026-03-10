@@ -21,10 +21,10 @@ class OrganizationRepositoryImpl implements OrganizationRepository {
   Future<void> saveOrganization(OrganizationEntity organization) =>
       _local.saveOrganization(organization);
 
-  @override
-  Future<OrganizationEntity?> getCurrentOrganization() async {
-    final session = _auth != null ? await _auth.getSession() : null;
-    final orgId = session?.organizationId ?? 'local_org';
-    return _local.getOrganization(orgId);
-  }
+  // @override
+  // Future<OrganizationEntity?> getCurrentOrganization() async {
+  //   final session = _auth != null ? await _auth.getSession() : null;
+  //   // final orgId = session?.organizationId ?? 'local_org';
+  //   return _local.getOrganization(orgId);
+  // }
 }

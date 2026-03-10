@@ -2,25 +2,34 @@ import 'package:dio/dio.dart';
 
 import '../../presentation/core/values/app_apis.dart';
 
-
+/// HTTP client for API calls. Uses [AppApis.baseUrl] by default.
+/// After login, call [setAccessToken] with the session ID so subsequent
+/// requests send the Cookie header.
 class ApiClient {
-  ApiClient({String? baseUrl}) : _dio = Dio(BaseOptions(
-    baseUrl: baseUrl ?? AppApis.baseUrl,
-    connectTimeout: const Duration(seconds: 15),
-    receiveTimeout: const Duration(seconds: 15),
-    headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-  ));
+  ApiClient({String? baseUrl})
+      : _dio = Dio(
+          BaseOptions(
+            baseUrl: baseUrl ?? AppApis.baseUrl,
+            connectTimeout: const Duration(seconds: 15),
+            receiveTimeout: const Duration(seconds: 15),
+            headers: <String, dynamic>{
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+          ),
+        );
 
   final Dio _dio;
-  String? _accessToken;
 
   Dio get dio => _dio;
 
-  void setAccessToken(String? token) {
-    _accessToken = token;
+  /// Sets the session ID for cookie-based auth. Sends "Cookie: session_id=value"
+  /// on every request. Pass null or empty to clear.
+  void setAccessToken(String? sessionId) {
     _dio.interceptors.removeWhere((e) => e is _AuthInterceptor);
-    if (token != null && token.isNotEmpty) {
-      _dio.interceptors.add(_AuthInterceptor(token));
+    final value = sessionId?.trim();
+    if (value != null && value.isNotEmpty) {
+      _dio.interceptors.add(_AuthInterceptor(value));
     }
   }
 
@@ -37,16 +46,21 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) =>
-      _dio.post<T>(path, data: data, queryParameters: queryParameters, options: options);
+      _dio.post<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      );
 }
 
 class _AuthInterceptor extends Interceptor {
-  _AuthInterceptor(this._token);
-  final String _token;
+  _AuthInterceptor(this._sessionId);
+  final String _sessionId;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    options.headers['Authorization'] = 'Bearer $_token';
+    options.headers['Cookie'] = 'session_id=$_sessionId';
     handler.next(options);
   }
 }

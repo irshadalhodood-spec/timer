@@ -4,11 +4,13 @@ import 'package:employee_track/base_module/presentation/util/validate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:iconsax/iconsax.dart';
 import '../../../../base_module/domain/entities/translation.dart';
 import '../../../../base_module/presentation/components/custom_text_form_field/custom_text_form_field.dart';
 import '../../../../base_module/presentation/core/values/app_constants.dart';
 import '../bloc/auth_bloc.dart';
 import '../widgets/curve_bottom_clipper.dart';
+import 'url_scanner_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -27,9 +29,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    _urlController.text = AppConstants.dummyInviteUrl;
-    _usernameController.text = AppConstants.dummyUsername;
-    _passwordController.text = AppConstants.dummyPassword;
   }
 
   @override
@@ -128,6 +127,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     hint: translation.of('login.invite_url_hint'),
                     keyboardType: TextInputType.url,
                     validator: (value) => Validate.value(value),
+                    suffix: IconButton(
+                      icon: Icon(
+                        Iconsax.scan_barcode,
+                        
+                        size: 20,
+                      ),
+                      onPressed: _openUrlScanner,
+                      tooltip: translation.of('login.scan_url'),
+                    ),
                   ),
 
                   AppPadding(),
@@ -169,7 +177,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   PrimaryButton(
                         onTap: () async {
                           await _pasteUrl();
-                          _submitUrl();
+                          // _submitUrl();
                           _submitLogin();
                         },
                         text: translation.of('login.login_button'),
@@ -227,17 +235,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  void _submitUrl() {
-    final url = _urlController.text.trim();
-    if (url.isEmpty) return;
-    context.read<AuthBloc>().add(AuthOrganizationUrlSubmitted(url: url));
-  }
+  // void _submitUrl() {
+  //   final url = _urlController.text.trim();
+  //   if (url.isEmpty) return;
+  //   context.read<AuthBloc>().add(AuthOrganizationUrlSubmitted(url: url));
+  // }
 
   Future<void> _pasteUrl() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final text = data?.text?.trim();
     if (text != null && text.isNotEmpty) {
       _urlController.text = text;
+    }
+  }
+
+  Future<void> _openUrlScanner() async {
+    final String? scannedUrl = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) => const UrlScannerScreen(),
+      ),
+    );
+    if (scannedUrl != null && scannedUrl.isNotEmpty && mounted) {
+      _urlController.text = scannedUrl;
     }
   }
 

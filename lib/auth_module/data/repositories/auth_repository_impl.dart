@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show debugPrint;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../domain/datasources/auth_api.dart';
 import '../../domain/entites/auth_session_entity.dart';
@@ -37,35 +38,45 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<AuthSessionEntity?> login(String username, String password) async {
-    if (username.isEmpty) return null;
+        debugPrint("USERLOGINS REQUESTED REPO IMPL");
+
+    if (username.isEmpty) {
+      throw ArgumentError('Username is required');
+    }
     await _storage.write(key: _keyUsername, value: username);
     await _storage.write(key: _keyPassword, value: password);
     final inviteUrl = await _local.getOrganizationInviteUrl();
+debugPrint("USERLOGINS REQUESTED REPO IMPL:- $inviteUrl --  $username -- $password");
 
     if (_api != null) {
       final response = await _api.login(username, password);
-      if (response.success && response.data != null) {
-        final loginData = response.data!;
-        final session = AuthSessionEntity(
-          accessToken: loginData.accessToken,
-          refreshToken: loginData.refreshToken,
-          user: loginData.user,
-          organizationId: loginData.organizationId ?? _extractOrgIdFromInviteUrl(inviteUrl ?? '') ?? 'demo-org-xyz',
-          organizationInviteUrl: inviteUrl,
-          expiresAt: loginData.expiresAt ?? DateTime.now().add(const Duration(days: 365)),
-        );
-        await _local.saveSession(session);
-        return session;
+      if (!response.success) {
+        throw Exception(response.message ?? 'Login failed');
       }
+      final loginData = response.data;
+      if (loginData == null) {
+        throw Exception(response.message ?? 'Invalid response');
+      }
+      final session = AuthSessionEntity(
+        accessToken: loginData.accessToken,
+        refreshToken: loginData.refreshToken,
+        user: loginData.user,
+        organizationId: loginData.organizationId ?? _extractOrgIdFromInviteUrl(inviteUrl ?? '') ?? 'local_org',
+        organizationInviteUrl: inviteUrl,
+        expiresAt: loginData.expiresAt ?? DateTime.now().add(const Duration(days: 365)),
+      );
+      await _local.saveSession(session);
+      return session;
     }
 
+    // Offline fallback when no API is configured
     final orgId = (inviteUrl != null && inviteUrl.isNotEmpty
             ? _extractOrgIdFromInviteUrl(inviteUrl)
             : null) ??
-        'demo-org-xyz';
-    final userId = username == 'demo_user' ? 'user_1' : 'local_${username}_${DateTime.now().millisecondsSinceEpoch}';
+        'local_org';
+    final userId = 'local_${username}_${DateTime.now().millisecondsSinceEpoch}';
     final user = UserEntity(
-      id: userId,
+      userId: userId,
       username: username,
       fullName: username,
     );

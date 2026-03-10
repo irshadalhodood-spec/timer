@@ -21,7 +21,8 @@ UserEntity _$UserEntityFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$UserEntity {
-  String get id => throw _privateConstructorUsedError;
+  @JsonKey(name: "user_id")
+  String get userId => throw _privateConstructorUsedError;
   String get username => throw _privateConstructorUsedError;
   String? get email => throw _privateConstructorUsedError;
   String? get phone => throw _privateConstructorUsedError;
@@ -32,6 +33,8 @@ mixin _$UserEntity {
   String? get departmentName => throw _privateConstructorUsedError;
   String? get reportingManagerId => throw _privateConstructorUsedError;
   DateTime? get joinDate => throw _privateConstructorUsedError;
+  @JsonKey(name: "admin_user")
+  bool? get adminUser => throw _privateConstructorUsedError;
 
   /// Serializes this UserEntity to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -51,7 +54,7 @@ abstract class $UserEntityCopyWith<$Res> {
   ) = _$UserEntityCopyWithImpl<$Res, UserEntity>;
   @useResult
   $Res call({
-    String id,
+    @JsonKey(name: "user_id") String userId,
     String username,
     String? email,
     String? phone,
@@ -62,6 +65,7 @@ abstract class $UserEntityCopyWith<$Res> {
     String? departmentName,
     String? reportingManagerId,
     DateTime? joinDate,
+    @JsonKey(name: "admin_user") bool? adminUser,
   });
 }
 
@@ -80,7 +84,7 @@ class _$UserEntityCopyWithImpl<$Res, $Val extends UserEntity>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
+    Object? userId = null,
     Object? username = null,
     Object? email = freezed,
     Object? phone = freezed,
@@ -91,12 +95,13 @@ class _$UserEntityCopyWithImpl<$Res, $Val extends UserEntity>
     Object? departmentName = freezed,
     Object? reportingManagerId = freezed,
     Object? joinDate = freezed,
+    Object? adminUser = freezed,
   }) {
     return _then(
       _value.copyWith(
-            id: null == id
-                ? _value.id
-                : id // ignore: cast_nullable_to_non_nullable
+            userId: null == userId
+                ? _value.userId
+                : userId // ignore: cast_nullable_to_non_nullable
                       as String,
             username: null == username
                 ? _value.username
@@ -138,6 +143,10 @@ class _$UserEntityCopyWithImpl<$Res, $Val extends UserEntity>
                 ? _value.joinDate
                 : joinDate // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
+            adminUser: freezed == adminUser
+                ? _value.adminUser
+                : adminUser // ignore: cast_nullable_to_non_nullable
+                      as bool?,
           )
           as $Val,
     );
@@ -154,7 +163,7 @@ abstract class _$$UserEntityImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    String id,
+    @JsonKey(name: "user_id") String userId,
     String username,
     String? email,
     String? phone,
@@ -165,6 +174,7 @@ abstract class _$$UserEntityImplCopyWith<$Res>
     String? departmentName,
     String? reportingManagerId,
     DateTime? joinDate,
+    @JsonKey(name: "admin_user") bool? adminUser,
   });
 }
 
@@ -182,7 +192,7 @@ class __$$UserEntityImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
+    Object? userId = null,
     Object? username = null,
     Object? email = freezed,
     Object? phone = freezed,
@@ -193,12 +203,13 @@ class __$$UserEntityImplCopyWithImpl<$Res>
     Object? departmentName = freezed,
     Object? reportingManagerId = freezed,
     Object? joinDate = freezed,
+    Object? adminUser = freezed,
   }) {
     return _then(
       _$UserEntityImpl(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
+        userId: null == userId
+            ? _value.userId
+            : userId // ignore: cast_nullable_to_non_nullable
                   as String,
         username: null == username
             ? _value.username
@@ -240,6 +251,10 @@ class __$$UserEntityImplCopyWithImpl<$Res>
             ? _value.joinDate
             : joinDate // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
+        adminUser: freezed == adminUser
+            ? _value.adminUser
+            : adminUser // ignore: cast_nullable_to_non_nullable
+                  as bool?,
       ),
     );
   }
@@ -249,7 +264,7 @@ class __$$UserEntityImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$UserEntityImpl implements _UserEntity {
   const _$UserEntityImpl({
-    required this.id,
+    @JsonKey(name: "user_id") required this.userId,
     required this.username,
     this.email,
     this.phone,
@@ -260,13 +275,15 @@ class _$UserEntityImpl implements _UserEntity {
     this.departmentName,
     this.reportingManagerId,
     this.joinDate,
+    @JsonKey(name: "admin_user") this.adminUser,
   });
 
   factory _$UserEntityImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserEntityImplFromJson(json);
 
   @override
-  final String id;
+  @JsonKey(name: "user_id")
+  final String userId;
   @override
   final String username;
   @override
@@ -287,10 +304,13 @@ class _$UserEntityImpl implements _UserEntity {
   final String? reportingManagerId;
   @override
   final DateTime? joinDate;
+  @override
+  @JsonKey(name: "admin_user")
+  final bool? adminUser;
 
   @override
   String toString() {
-    return 'UserEntity(id: $id, username: $username, email: $email, phone: $phone, fullName: $fullName, profilePhotoUrl: $profilePhotoUrl, jobTitle: $jobTitle, departmentId: $departmentId, departmentName: $departmentName, reportingManagerId: $reportingManagerId, joinDate: $joinDate)';
+    return 'UserEntity(userId: $userId, username: $username, email: $email, phone: $phone, fullName: $fullName, profilePhotoUrl: $profilePhotoUrl, jobTitle: $jobTitle, departmentId: $departmentId, departmentName: $departmentName, reportingManagerId: $reportingManagerId, joinDate: $joinDate, adminUser: $adminUser)';
   }
 
   @override
@@ -298,7 +318,7 @@ class _$UserEntityImpl implements _UserEntity {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$UserEntityImpl &&
-            (identical(other.id, id) || other.id == id) &&
+            (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.username, username) ||
                 other.username == username) &&
             (identical(other.email, email) || other.email == email) &&
@@ -316,14 +336,16 @@ class _$UserEntityImpl implements _UserEntity {
             (identical(other.reportingManagerId, reportingManagerId) ||
                 other.reportingManagerId == reportingManagerId) &&
             (identical(other.joinDate, joinDate) ||
-                other.joinDate == joinDate));
+                other.joinDate == joinDate) &&
+            (identical(other.adminUser, adminUser) ||
+                other.adminUser == adminUser));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
     runtimeType,
-    id,
+    userId,
     username,
     email,
     phone,
@@ -334,6 +356,7 @@ class _$UserEntityImpl implements _UserEntity {
     departmentName,
     reportingManagerId,
     joinDate,
+    adminUser,
   );
 
   /// Create a copy of UserEntity
@@ -352,7 +375,7 @@ class _$UserEntityImpl implements _UserEntity {
 
 abstract class _UserEntity implements UserEntity {
   const factory _UserEntity({
-    required final String id,
+    @JsonKey(name: "user_id") required final String userId,
     required final String username,
     final String? email,
     final String? phone,
@@ -363,13 +386,15 @@ abstract class _UserEntity implements UserEntity {
     final String? departmentName,
     final String? reportingManagerId,
     final DateTime? joinDate,
+    @JsonKey(name: "admin_user") final bool? adminUser,
   }) = _$UserEntityImpl;
 
   factory _UserEntity.fromJson(Map<String, dynamic> json) =
       _$UserEntityImpl.fromJson;
 
   @override
-  String get id;
+  @JsonKey(name: "user_id")
+  String get userId;
   @override
   String get username;
   @override
@@ -390,6 +415,9 @@ abstract class _UserEntity implements UserEntity {
   String? get reportingManagerId;
   @override
   DateTime? get joinDate;
+  @override
+  @JsonKey(name: "admin_user")
+  bool? get adminUser;
 
   /// Create a copy of UserEntity
   /// with the given fields replaced by the non-null parameter values.

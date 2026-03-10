@@ -27,14 +27,14 @@ class OrganizationTabCubit extends Cubit<OrganizationTabState> {
     try {
       await _api.getOrganization(_orgId);
       await _api.getEmployees(_orgId);
-      final org = await _orgRepo.getCurrentOrganization();
+      // final org = await _orgRepo.getCurrentOrganization();
       final employees = await _empRepo.getEmployeesByOrg(
         _orgId,
         departmentId: state.selectedDepartmentId,
         search: state.searchQuery.isEmpty ? null : state.searchQuery,
       );
       emit(state.copyWith(
-        organization: org,
+        // organization: org,
         employees: employees,
         isInitialLoading: false,
         isEmployeesLoading: false,
